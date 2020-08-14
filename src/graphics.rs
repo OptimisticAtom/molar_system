@@ -136,14 +136,18 @@ pub fn do_graphics_stuff() -> u32{
     shader_program.use_program();
 //do buffer stuff
     let vertices: Vec<f32> = vec![
-    -0.5, -0.5,
-    0.5, -0.5,
-    0.5, 0.5,
-    -0.5, 0.5,
+    0.2, 0.4,
+    0.4, 0.0,
+    0.2, -0.4,
+    -0.2, -0.4,
+    -0.4, 0.0,
+    -0.2, 0.4,
     ];
     let indices: Vec<u8> = vec![
-    0, 1, 2,
-    2, 3, 0
+    0, 4, 5,
+    0, 1, 4,
+    1, 3, 4,
+    1, 2, 3,
     ];
     let mut vbo: gl::types::GLuint = 0;
     let mut ibo: gl::types::GLuint = 0;
@@ -202,6 +206,6 @@ pub fn draw(vao: u32){
         gl::Clear(gl::COLOR_BUFFER_BIT);
         gl::BindVertexArray(vao);
         // gl::DrawArrays(gl::TRIANGLES, 0, 6);
-        gl::DrawElements(gl::TRIANGLES, 6, gl::UNSIGNED_BYTE, std::ptr::null());
+        gl::DrawElements(gl::TRIANGLES, 12, gl::UNSIGNED_BYTE, std::ptr::null());
     }
 }
