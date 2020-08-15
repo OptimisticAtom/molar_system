@@ -1,8 +1,11 @@
+
+
 extern crate sdl2;
 extern crate gl;
 
 
-mod graphics;
+// mod graphics;
+mod game_objects;
 
 
 fn main() {
@@ -17,16 +20,32 @@ fn main() {
     unsafe{
         gl::Viewport(0,0,900,900);
         gl::ClearColor(0.05,0.0,0.15,1.0);
+        // gl::MatrixMode(gl::GL_PROJECTION);
     }
-    let vao = graphics::do_graphics_stuff();
+    // let vao = graphics::do_graphics_stuff();
+    // let hex = graphics::Renderer::initialize_object_renderer();
     let mut event_pump = sdl.event_pump().unwrap();
+    // let mut r = 0.1;
+    // let mut dr = 0.05;
+    // let s = "u_Color";
+    let camera_position = game_objects::Position::set_position(0.0,0.0);
+    let camera = game_objects::Camera{position: camera_position, scale: 100.0};
+    let hex1 = game_objects::Hexagon::initialize_hexagon(5.0, 5.0, &camera);
+    let hex2 = game_objects::Hexagon::initialize_hexagon(-5.0, -5.0, &camera);
     'main: loop{
         for event in event_pump.poll_iter() {
             match event{
                 sdl2::event::Event::Quit {..} => break 'main, _ => {},
             }
         }
-        graphics::draw(vao);
+        // if r >= 0.95{dr = -0.05} else if r <= 0.05 {dr = 0.05}
+        // r += dr;
+        // let mut location = unsafe {gl::GetUniformLocation(vao[2], s.as_ptr() as *const gl::types::GLbyte)};
+        // graphics::draw(vao, location, r);
+        // hex.draw_object();
+        unsafe{gl::Clear(gl::COLOR_BUFFER_BIT);}
+        hex1.renderer.draw_object();
+        hex2.renderer.draw_object();
         window.gl_swap_window();
     }
 }
