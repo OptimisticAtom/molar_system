@@ -2,6 +2,10 @@ extern crate gl;
 
 use std;
 use std::ffi::CString;
+use std::collections::HashMap;
+
+// const vertex_number: u32 = gl::VERTEX_SHADER;
+// const fragment_number: u32 = gl::FRAGMENT_SHADER;
 
 #[derive(Debug, Default)]
 struct Shader {
@@ -100,20 +104,75 @@ impl Drop for ShaderProgram{
     }
 }
 
+// macro_rules! generate_shader_code {
+//     (gl::VERTEX_SHADER) => {
+//         let vertex_code = "
+//         #version 330 core\n
+//
+//         layout (location = 0) in vec3 Position;\n
+//
+//         void main()
+//         {
+//             gl_Position = vec4(Position, 1.0);
+//         }
+//         ";
+//         vertex_code
+//     };
+//     (gl::FRAGMENT_SHADER) => {
+//         let fragment_code = "
+//         #version 330 core\n
+//
+//         out vec4 Color;\n
+//         uniform vec4 u_Color;\n
+//         void main()
+//         {
+//             Color = u_Color;
+//         }
+//         ";
+//         fragment_code
+//     }
+// }
+
 macro_rules! create_new_shader {
     ($code:ident, $type:expr) => {
         Shader::create_shader($code, $type);
     };
 }
 
+// macro_rules! create_shaders {
+//     ($program: ident, $type: expr,+) => {
+//         let shader_code = generate_shader_code!($type);
+//         let shader = create_new_shader!(shader_code, $type);
+//         program.attach_shader(shader);
+//     };
+// }
+
+
+
 pub struct Renderer {
-    program_id: u32,
+    program: ShaderProgram,
     vertex_array_object: u32,
     index_buffer_object:u32,
+    vertex_buffer_object: u32,
+    uniform_cache: HashMap<String, i32>
 }
 
 impl Renderer {
-    pub fn initialize_object_renderer(vertices: Vec<f32>) -> Renderer{
+    pub fn new() -> Renderer{
+        Renderer{
+            program: ShaderProgram::new(),
+            vertex_array_object: 0,
+            index_buffer_object: 0,
+            vertex_buffer_object: 0,
+            uniform_cache: HashMap::new()
+        }
+    }
+
+    // fn attach_shaders(&self){
+    //     create_shaders!(self.program, gl::VERTEX_SHADER, gl::FRAGMENT_SHADER);
+    // }
+
+    pub fn initialize_object_renderer(&mut self, vertices: Vec<f32>){
         let vertex_code = "
         #version 330 core\n
 
@@ -139,6 +198,7 @@ impl Renderer {
         let mut shader_program = ShaderProgram::new();
         shader_program.attach_shader(&vertex_shader);
         shader_program.attach_shader(&fragment_shader);
+        // self.attach_shaders();
         shader_program.link();
         let s = "u_Color";
         let location = unsafe {gl::GetUniformLocation(shader_program.gl_handle, s.as_ptr() as *const gl::types::GLbyte)};
@@ -148,14 +208,6 @@ impl Renderer {
 
 
     //do buffer stuff
-        // let vertices: Vec<f32> = vec![
-        // 0.2, 0.4,
-        // 0.4, 0.0,
-        // 0.2, -0.4,
-        // -0.2, -0.4,
-        // -0.4, 0.0,
-        // -0.2, 0.4,
-        // ];
         let indices: Vec<u8> = vec![
         0, 4, 5,
         0, 1, 4,
@@ -171,7 +223,7 @@ impl Renderer {
                 gl::ARRAY_BUFFER, // target
                 (vertices.len() * std::mem::size_of::<f32>()) as gl::types::GLsizeiptr, // size of data in bytes
                 vertices.as_ptr() as *const gl::types::GLvoid, // pointer to data
-                gl::STATIC_DRAW, // usage
+                gl::DYNAMIC_DRAW, // usage
             );
             gl::BindBuffer(gl::ARRAY_BUFFER, 0); // unbind the buffer
         }
@@ -187,7 +239,7 @@ impl Renderer {
                 gl::ELEMENT_ARRAY_BUFFER, // target
                 (indices.len() * std::mem::size_of::<u8>()) as gl::types::GLsizeiptr, // size of data in bytes
                 indices.as_ptr() as *const gl::types::GLvoid, // pointer to data
-                gl::STATIC_DRAW, // usage
+                gl::DYNAMIC_DRAW, // usage
             );
             gl::BindBuffer(gl::ARRAY_BUFFER, 0); // unbind the buffer
             gl::BindBuffer(gl::ARRAY_BUFFER, vbo);
@@ -211,12 +263,44 @@ impl Renderer {
             );
             gl::BindVertexArray(0);
         }
-        Renderer{program_id: shader_program.gl_handle, vertex_array_object: vao, index_buffer_object: ibo}
+        self.vertex_array_object = vao;
+        self.index_buffer_object = ibo;
+        self.vertex_buffer_object = vbo;
+
+        // Renderer{program_id: shader_program.gl_handle, vertex_array_object: vao, index_buffer_object: ibo}
     }
-    pub fn draw_object(&self){
+
+
+    // pub fn get_uniform_location(&self, slice: &str) -> i32{
+    //     name = slice.to_string();
+    //     if self.uniform_cache.contains(name) {
+    //         let location = self.uniform_cache.get(name);
+    //         if location == -1 {
+    //             println!("Warning cached uniform{:?} doesn't exist!", name);
+    //         }
+    //         location
+    //     }
+    //     else{
+    //         let location = unsafe {gl::GetUniformLocation(self.program_id, name.as_ptr() as *const gl::types::GLbyte)};
+    //         if location == -1 {
+    //             println!("Warnig new uniform: {:?} doesn't exist!", name);
+    //         }
+    //         self.uniform_cache.insert(name, location);
+    //         location
+    //     }
+    // }
+
+    pub fn draw_object(&self, vertices: Vec<f32>){
         unsafe{
-            gl::UseProgram(self.program_id);
-            
+            gl::UseProgram(self.program.gl_handle);
+            gl::BindBuffer(gl::ARRAY_BUFFER, self.vertex_buffer_object);
+            gl::BufferData(
+                gl::ARRAY_BUFFER, // target
+                (vertices.len() * std::mem::size_of::<f32>()) as gl::types::GLsizeiptr, // size of data in bytes
+                vertices.as_ptr() as *const gl::types::GLvoid, // pointer to data
+                gl::DYNAMIC_DRAW, // usage
+            );
+            gl::BindBuffer(gl::ARRAY_BUFFER, 0);
             // gl::Uniform4f(location, r, r, r, r);
             gl::BindVertexArray(self.vertex_array_object);
             gl::BindBuffer(gl::ELEMENT_ARRAY_BUFFER, self.index_buffer_object);

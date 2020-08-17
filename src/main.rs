@@ -5,7 +5,8 @@ extern crate gl;
 
 
 // mod graphics;
-mod game_objects;
+// mod game_objects;
+mod game_state;
 
 
 fn main() {
@@ -28,10 +29,11 @@ fn main() {
     // let mut r = 0.1;
     // let mut dr = 0.05;
     // let s = "u_Color";
-    let camera_position = game_objects::Position::set_position(0.0,0.0);
-    let camera = game_objects::Camera{position: camera_position, scale: 100.0};
-    let hex1 = game_objects::Hexagon::initialize_hexagon(5.0, 5.0, &camera);
-    let hex2 = game_objects::Hexagon::initialize_hexagon(-5.0, -5.0, &camera);
+    // let camera_position = game_objects::Position::new();
+    // let camera = game_objects::Camera{position: camera_position, scale: 100.0};
+    // let mut hex1 = game_objects::Hexagon::initialize_hexagon(-50.0, 50.0, &camera);
+    // let mut hex2 = game_objects::Hexagon::initialize_hexagon(50.0, -50.0, &camera);
+    let game = game_state::Simulation::start_simulation();
     'main: loop{
         for event in event_pump.poll_iter() {
             match event{
@@ -43,9 +45,12 @@ fn main() {
         // let mut location = unsafe {gl::GetUniformLocation(vao[2], s.as_ptr() as *const gl::types::GLbyte)};
         // graphics::draw(vao, location, r);
         // hex.draw_object();
+        // hex1.position.x += 0.01;
+        // hex2.position.x -= 0.1;
         unsafe{gl::Clear(gl::COLOR_BUFFER_BIT);}
-        hex1.renderer.draw_object();
-        hex2.renderer.draw_object();
+        game.chunck_loader.draw_chunks(&game.main_camera);
+        // hex1.render_hexagon(&camera);
+        // hex2.render_hexagon(&camera);
         window.gl_swap_window();
     }
 }
