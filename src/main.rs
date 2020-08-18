@@ -15,13 +15,16 @@ fn main() {
     let gl_attr = video_subsystem.gl_attr();
     gl_attr.set_context_profile(sdl2::video::GLProfile::Core);
     gl_attr.set_context_version(4,5);
-    let window = video_subsystem.window("Molar System", 900, 900).opengl().resizable().build().unwrap();
+    let window = video_subsystem.window("Molar System", 1000, 1000).opengl().resizable().build().unwrap();
     let _gl_context = window.gl_create_context().unwrap();
     gl::load_with(|name| video_subsystem.gl_get_proc_address(name) as *const std::os::raw::c_void);
     unsafe{
-        gl::Viewport(0,0,900,900);
+        gl::Viewport(0,0,1000,1000);
         gl::ClearColor(0.05,0.0,0.15,1.0);
         // gl::MatrixMode(gl::GL_PROJECTION);
+        // gl::Enable(gl::GL_BLEND);
+        // gl::BlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+
     }
     // let vao = graphics::do_graphics_stuff();
     // let hex = graphics::Renderer::initialize_object_renderer();

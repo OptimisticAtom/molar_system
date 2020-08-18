@@ -1,6 +1,9 @@
 mod graphics;
 mod chemistry;
 
+const COEFFICIENT_OF_X: f64 = 0.5;
+const COEFFICIENT_OF_Y: f64 = 0.8660254038;
+
 pub struct Position{
     pub x: f64,
     pub y: f64,
@@ -9,6 +12,14 @@ pub struct Position{
 impl Position {
     pub fn new() -> Position{
         Position{x: 0.0, y: 0.0}
+    }
+
+    pub fn axial_to_position(axial_coordinate: &AxialCoordinate) -> Position{
+        let mat: nalgebra::Matrix2<f64> = nalgebra::Matrix2::new(1.732050808, 0.8660254038,0.0,1.5);
+        let mat2: nalgebra::Matrix2x1<f64> = nalgebra::Matrix2x1::new(axial_coordinate.r as f64, axial_coordinate.q as f64);
+        let mat3: nalgebra::Matrix2x1<f64> = 1.0/1.732050808 * mat * mat2;
+        let mat4: nalgebra::Matrix2x1<f64> = mat3;
+        Position{x: mat4.data[0], y: mat4.data[1]}
     }
 }
 
@@ -27,29 +38,29 @@ impl CubicCoordinate {
     pub fn new() -> CubicCoordinate{
         CubicCoordinate{x: 0, y: 0, z: 0}
     }
+
+    // pub fn axial_to_cubic(axial_coordinate: &AxialCoordinate) -> CubicCoordinate{
+    //
+    // }
 }
 
-pub struct AxialCoordinate{
-    x: i16,
-    y: i16,
+pub struct AxialCoordinate {
+    q: i128,
+    r: i128,
 }
 
 impl AxialCoordinate {
     pub fn new() -> AxialCoordinate{
-        AxialCoordinate{x: 0, y: 0}
+        AxialCoordinate{q: 0, r: 0}
+    }
+
+    pub fn cubic_to_axial(cubic_coordinate: &CubicCoordinate) -> AxialCoordinate{
+        let new_q = cubic_coordinate.x;
+        let new_r = cubic_coordinate.z;
+        AxialCoordinate{q: new_q, r: new_r}
     }
 }
 
-pub struct OffsetCoordinate{
-    x: i128,
-    y: i128,
-}
-
-impl OffsetCoordinate {
-    pub fn new() -> OffsetCoordinate{
-        OffsetCoordinate{x: 0, y: 0}
-    }
-}
 
 pub struct Hexagon{
     pub position: Position,
@@ -69,10 +80,9 @@ impl Hexagon{
         }
     }
 
-    pub fn initialize_hexagon(x: f64, y: f64, camera: &Camera) -> Hexagon{
+    pub fn initialize_hexagon(set_position: Position, camera: &Camera) -> Hexagon{
         let mut hexagon = Hexagon::new();
-        hexagon.position.x = x;
-        hexagon.position.y = y;
+        hexagon.position = set_position;
         hexagon.renderer.initialize_object_renderer(hexagon.creater_render_vertices(camera));
         hexagon
     }
@@ -87,13 +97,13 @@ impl Hexagon{
 
     pub fn normalized_vertex_array(position: &NormalizedPosition, camera: &Camera) -> Vec<f32>{
         let scale = camera.scale as f32;
-        let distance_x = 0.8660254038 / scale;
-        let distance_y = 0.5 / scale;
+        let distance_x = 0.5 / scale;
+        let distance_y = 0.2886751346 / scale;
         vec![
-        position.x, (position.y + (1.0 / scale)),
+        position.x, (position.y + (0.5773502692 / scale)),
         (position.x + distance_x), (position.y + distance_y),
         (position.x + distance_x), (position.y - distance_y),
-        position.x, (position.y - (1.0 / scale)),
+        position.x, (position.y - (0.5773502692 / scale)),
         (position.x - distance_x), (position.y - distance_y),
         (position.x - distance_x), (position.y + distance_y)
         ]
@@ -118,20 +128,22 @@ impl Camera {
     pub fn new() -> Camera{
         Camera{
             position: Position::new(),
-            scale: 100.0
+            scale: 50.0
         }
     }
 }
 
 pub struct Tile {
     hexagon: Hexagon,
+    hexagonal_position: CubicCoordinate,
     formula: String,
 }
 
 impl Tile {
-    pub fn new(assigned_formula: String, x: f64, y: f64, camera: &Camera) -> Tile{
+    pub fn new(assigned_formula: String, hexagonal_coordinate: CubicCoordinate, camera: &Camera) -> Tile{
         Tile{
-            hexagon: Hexagon::initialize_hexagon(x, y, camera),
+            hexagon: Hexagon::initialize_hexagon(Position::axial_to_position(&AxialCoordinate::cubic_to_axial(&hexagonal_coordinate)), camera),
+            hexagonal_position: hexagonal_coordinate,
             formula: assigned_formula,
         }
     }
@@ -144,17 +156,17 @@ pub struct Chunk {
 
 impl Chunk {
     pub fn load_chunk(camera: &Camera) -> Chunk{
-        // let tiles = vec![vec![AxialCoordinate::new()]];
-        // let l = 1;
         let mut tiles: Vec<EnviromentalTile> = vec![];
-        for i in -100..101 {
-            // if i > 0{
-            //     l = 6*i
-            // }
-            // for j in [0..l + 1] {
-            //
-            // }
-            tiles.push(EnviromentalTile{tile: Tile::new("stone".to_string(), i as f64, i as f64, camera)});
+        let chunk_size: i128 = 50;
+        for x in -chunk_size..chunk_size {
+            for y in -chunk_size..chunk_size {
+                for z in -chunk_size..chunk_size {
+                    if x+y+z == 0 {
+                        tiles.push(EnviromentalTile{tile: Tile::new("stone".to_string(),
+                        CubicCoordinate{x,y,z}, camera)});
+                    }
+                }
+            }
         }
         Chunk{enviromental_tiles: tiles, planetary_position: CubicCoordinate::new()}
     }

@@ -1,3 +1,5 @@
+extern crate nalgebra;
+
 mod game_objects;
 
 
