@@ -1,4 +1,4 @@
-mod graphics;
+pub mod graphics;
 mod chemistry;
 
 const COEFFICIENT_OF_X: f64 = 0.5;

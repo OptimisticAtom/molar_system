@@ -36,7 +36,7 @@ fn main() {
     // let camera = game_objects::Camera{position: camera_position, scale: 100.0};
     // let mut hex1 = game_objects::Hexagon::initialize_hexagon(-50.0, 50.0, &camera);
     // let mut hex2 = game_objects::Hexagon::initialize_hexagon(50.0, -50.0, &camera);
-    let game = game_state::Simulation::start_simulation();
+    let mut game = game_state::Simulation::start_simulation(60);
     'main: loop{
         for event in event_pump.poll_iter() {
             match event{
@@ -50,8 +50,8 @@ fn main() {
         // hex.draw_object();
         // hex1.position.x += 0.01;
         // hex2.position.x -= 0.1;
-        unsafe{gl::Clear(gl::COLOR_BUFFER_BIT);}
-        game.chunck_loader.draw_chunks(&game.main_camera);
+        
+        game.loop_call();
         // hex1.render_hexagon(&camera);
         // hex2.render_hexagon(&camera);
         window.gl_swap_window();

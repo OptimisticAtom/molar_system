@@ -1,4 +1,4 @@
-extern crate gl;
+pub extern crate gl;
 
 use std;
 use std::ffi::CString;
@@ -271,24 +271,24 @@ impl Renderer {
     }
 
 
-    // pub fn get_uniform_location(&self, slice: &str) -> i32{
-    //     name = slice.to_string();
-    //     if self.uniform_cache.contains(name) {
-    //         let location = self.uniform_cache.get(name);
-    //         if location == -1 {
-    //             println!("Warning cached uniform{:?} doesn't exist!", name);
-    //         }
-    //         location
-    //     }
-    //     else{
-    //         let location = unsafe {gl::GetUniformLocation(self.program_id, name.as_ptr() as *const gl::types::GLbyte)};
-    //         if location == -1 {
-    //             println!("Warnig new uniform: {:?} doesn't exist!", name);
-    //         }
-    //         self.uniform_cache.insert(name, location);
-    //         location
-    //     }
-    // }
+    pub fn get_uniform_location(&mut self, slice: &str) -> i32{
+        let name = slice.to_string();
+        if self.uniform_cache.contains_key(&name) {
+            let cached_location = *self.uniform_cache.get(&name).unwrap();
+            if cached_location == -1 {
+                println!("Warning cached uniform{:?} doesn't exist!", name);
+            }
+            cached_location
+        }
+        else{
+            let location = unsafe {gl::GetUniformLocation(self.program.gl_handle, name.as_ptr() as *const gl::types::GLbyte)};
+            if location == -1 {
+                println!("Warnig new uniform: {:?} doesn't exist!", name);
+            }
+            self.uniform_cache.insert(name, location);
+            location
+        }
+    }
 
     pub fn draw_object(&self, vertices: Vec<f32>){
         unsafe{
