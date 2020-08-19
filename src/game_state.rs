@@ -11,6 +11,7 @@ pub struct Simulation {
     pub chunck_loader: ChunkLoader,
     pub main_camera: game_objects::Camera,
     last_camera_position: game_objects::Position,
+    last_camera_scale: f64,
     frame_time: Duration,
     last_frame: Instant,
     frames_per_step: u8,
@@ -33,6 +34,7 @@ impl Simulation {
             chunck_loader: ChunkLoader::start_chunk_loader(&camera),
             main_camera: camera,
             last_camera_position: game_objects::Position::new(),
+            last_camera_scale: 50.0,
             frame_time: Duration::from_micros(frame_as_microseconds),
             last_frame: Instant::now(),
             frames_per_step: fps / 10 as u8,
@@ -58,9 +60,11 @@ impl Simulation {
         }
         if self.main_camera.position.x != self.last_camera_position.x ||
         self.main_camera.position.y != self.last_camera_position.y ||
-        self.frames_elapsed_since_last_step == 0{
+        self.frames_elapsed_since_last_step == 0 ||
+        self.main_camera.scale != self.last_camera_scale{
             self.draw_new_screen();
             self.last_camera_position = self.main_camera.position;
+            self.last_camera_scale = self.main_camera.scale;
         }
     }
 

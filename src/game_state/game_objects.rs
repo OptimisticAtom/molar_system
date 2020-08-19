@@ -180,7 +180,6 @@ impl Chunk {
                         let r = (x as f32/50.0).abs();
                         let g = (y as f32/50.0).abs();
                         let b = (z as f32/50.0).abs();
-                        println!("{:?}", r);
                         tile.tile.hexagon.set_color(r, g, b, 1.0);
                         tiles.push(tile);
                     }

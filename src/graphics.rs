@@ -67,8 +67,8 @@ impl ShaderProgram {
 //Attach Shader to Program
     pub fn attach_shader(&mut self, shader: &Shader){
         unsafe {
-            let t = &shader.shader_type;
-            println!("Attaching shader of type {}, handle:{} to program {}", t, shader.gl_handle, self.gl_handle);
+            // let t = &shader.shader_type;
+            // println!("Attaching shader of type {}, handle:{} to program {}", t, shader.gl_handle, self.gl_handle);
             gl::AttachShader(self.gl_handle, shader.gl_handle);
         }
     }
@@ -87,9 +87,9 @@ impl ShaderProgram {
                 println!("Error link failed with error: {:?} for: {:?}", info_log, self.gl_handle);
                 panic!();
             }
-            else{
-                println!("Linked successfully {}", self.gl_handle);
-            }
+            // else{
+            //     println!("Linked successfully {}", self.gl_handle);
+            // }
         }
     }
     pub fn use_program(&self){
