@@ -17,6 +17,7 @@ pub struct Simulation {
     frames_per_step: u8,
     frames_elapsed_since_last_step: u8,
     global_step_count: u128,
+    material_dictionary: game_objects::chemistry::MaterialDictionary,
 }
 
 impl Simulation {
@@ -31,7 +32,7 @@ impl Simulation {
         //     seed: &new_seed,
         // };
         Simulation{
-            chunck_loader: ChunkLoader::start_chunk_loader(&camera),
+            chunck_loader: ChunkLoader::new(),
             main_camera: camera,
             last_camera_position: game_objects::Position::new(),
             last_camera_scale: 50.0,
@@ -40,6 +41,7 @@ impl Simulation {
             frames_per_step: fps / 10 as u8,
             frames_elapsed_since_last_step: 0,
             global_step_count: 0,
+            material_dictionary: game_objects::chemistry::MaterialDictionary::new(),
         }
     }
 
@@ -71,6 +73,7 @@ impl Simulation {
     fn step(&mut self){
         self.global_step_count += 1;
         // println!("step: {:?}", self.global_step_count);
+        self.chunck_loader.load_chunks(&self.main_camera, &self.material_dictionary)
     }
 
     fn draw_new_screen(&self){
@@ -80,17 +83,27 @@ impl Simulation {
 }
 
 pub struct ChunkLoader {
-    loadedChunks: Vec<game_objects::Chunk>,
+    loaded_chunks: Vec<game_objects::Chunk>,
 }
 
 impl ChunkLoader {
-    pub fn start_chunk_loader(camera: &game_objects::Camera) -> ChunkLoader{
-        ChunkLoader{loadedChunks: vec![game_objects::Chunk::load_chunk(camera)]}
+    pub fn new() -> ChunkLoader{
+        ChunkLoader{loaded_chunks: vec![]}
+    }
+
+    pub fn load_chunks(&mut self, camera: &game_objects::Camera,
+        dictionary: &game_objects::chemistry::MaterialDictionary)
+    {
+
+        if self.loaded_chunks.len() < 1 {
+            self.loaded_chunks.push(game_objects::Chunk::load_chunk(camera, dictionary));
+        }
+
     }
 
     pub fn draw_chunks(&self, camera: &game_objects::Camera){
         // for i in self.loadedChunks {
-            self.loadedChunks[0].draw_tiles(camera);
+            self.loaded_chunks[0].draw_tiles(camera);
         // }
     }
 }
