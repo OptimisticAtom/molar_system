@@ -26,34 +26,16 @@ fn main() {
         // gl::BlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
     }
-    // let vao = graphics::do_graphics_stuff();
-    // let hex = graphics::Renderer::initialize_object_renderer();
     let mut event_pump = sdl.event_pump().unwrap();
-    // let mut r = 0.1;
-    // let mut dr = 0.05;
-    // let s = "u_Color";
-    // let camera_position = game_objects::Position::new();
-    // let camera = game_objects::Camera{position: camera_position, scale: 100.0};
-    // let mut hex1 = game_objects::Hexagon::initialize_hexagon(-50.0, 50.0, &camera);
-    // let mut hex2 = game_objects::Hexagon::initialize_hexagon(50.0, -50.0, &camera);
     let mut game = game_state::Simulation::start_simulation(60);
     'main: loop{
         for event in event_pump.poll_iter() {
             match event{
                 sdl2::event::Event::Quit {..} => break 'main, _ => {},
+                // sdl2::event::Event::MouseWheel {..} => game.main_camera.zoom(event.y),
             }
         }
-        // if r >= 0.95{dr = -0.05} else if r <= 0.05 {dr = 0.05}
-        // r += dr;
-        // let mut location = unsafe {gl::GetUniformLocation(vao[2], s.as_ptr() as *const gl::types::GLbyte)};
-        // graphics::draw(vao, location, r);
-        // hex.draw_object();
-        // hex1.position.x += 0.01;
-        // hex2.position.x -= 0.1;
-        
         game.loop_call();
-        // hex1.render_hexagon(&camera);
-        // hex2.render_hexagon(&camera);
         window.gl_swap_window();
     }
 }

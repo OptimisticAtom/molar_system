@@ -1,3 +1,4 @@
+// pub mod graphics{
 pub extern crate gl;
 
 use std;
@@ -200,10 +201,13 @@ impl Renderer {
         shader_program.attach_shader(&fragment_shader);
         // self.attach_shaders();
         shader_program.link();
-        let s = "u_Color";
-        let location = unsafe {gl::GetUniformLocation(shader_program.gl_handle, s.as_ptr() as *const gl::types::GLbyte)};
+        // let s = "u_Color";
+
+        // let location = unsafe {gl::GetUniformLocation(shader_program.gl_handle, s.as_ptr() as *const gl::types::GLbyte)};
+
+        // self.get_uniform_location("u_Color");
         shader_program.use_program();
-        unsafe {gl::Uniform4f(location, 0.2, 0.3, 0.8, 1.0);}
+        // unsafe {gl::Uniform4f(location, 0.2, 0.3, 0.8, 1.0);}
 
 
 
@@ -266,10 +270,15 @@ impl Renderer {
         self.vertex_array_object = vao;
         self.index_buffer_object = ibo;
         self.vertex_buffer_object = vbo;
-
+        self.program = shader_program;
         // Renderer{program_id: shader_program.gl_handle, vertex_array_object: vao, index_buffer_object: ibo}
     }
 
+    pub fn set_color(&mut self, r: f32, g: f32, b: f32, a: f32){
+        let s = "u_Color";
+        let location = self.get_uniform_location(s);
+        unsafe {gl::Uniform4f(location, r, g, b, a);}
+    }
 
     pub fn get_uniform_location(&mut self, slice: &str) -> i32{
         let name = slice.to_string();
@@ -311,117 +320,118 @@ impl Renderer {
     }
 }
 
-pub fn do_graphics_stuff() -> [u32; 3]{
-    let vertex_code = "
-    #version 330 core\n
-
-    layout (location = 0) in vec3 Position;\n
-
-    void main()
-    {
-        gl_Position = vec4(Position, 1.0);
-    }
-    ";
-    let fragment_code = "
-    #version 330 core\n
-
-    out vec4 Color;\n
-    uniform vec4 u_Color;\n
-    void main()
-    {
-        Color = u_Color;
-    }
-    ";
-    let vertex_shader = create_new_shader!(vertex_code, gl::VERTEX_SHADER);
-    let fragment_shader = create_new_shader!(fragment_code, gl::FRAGMENT_SHADER);
-    let mut shader_program = ShaderProgram::new();
-    shader_program.attach_shader(&vertex_shader);
-    shader_program.attach_shader(&fragment_shader);
-    shader_program.link();
-    let s = "u_Color";
-    let location = unsafe {gl::GetUniformLocation(shader_program.gl_handle, s.as_ptr() as *const gl::types::GLbyte)};
-    shader_program.use_program();
-    unsafe {gl::Uniform4f(location, 0.2, 0.3, 0.8, 1.0);}
-
-
-
-//do buffer stuff
-    let vertices: Vec<f32> = vec![
-    0.2, 0.4,
-    0.4, 0.0,
-    0.2, -0.4,
-    -0.2, -0.4,
-    -0.4, 0.0,
-    -0.2, 0.4,
-    ];
-    let indices: Vec<u8> = vec![
-    0, 4, 5,
-    0, 1, 4,
-    1, 3, 4,
-    1, 2, 3,
-    ];
-    let mut vbo: gl::types::GLuint = 0;
-    let mut ibo: gl::types::GLuint = 0;
-    unsafe {
-        gl::GenBuffers(1, &mut vbo);
-        gl::BindBuffer(gl::ARRAY_BUFFER, vbo);
-        gl::BufferData(
-            gl::ARRAY_BUFFER, // target
-            (vertices.len() * std::mem::size_of::<f32>()) as gl::types::GLsizeiptr, // size of data in bytes
-            vertices.as_ptr() as *const gl::types::GLvoid, // pointer to data
-            gl::STATIC_DRAW, // usage
-        );
-        gl::BindBuffer(gl::ARRAY_BUFFER, 0); // unbind the buffer
-    }
-    let mut vao: gl::types::GLuint = 0;
-    unsafe {
-        gl::GenVertexArrays(1, &mut vao);
-        gl::BindVertexArray(vao);
-        //get indice data
-        gl::BindBuffer(gl::ELEMENT_ARRAY_BUFFER, 0);
-        gl::GenBuffers(1, &mut ibo);
-        gl::BindBuffer(gl::ELEMENT_ARRAY_BUFFER, ibo);
-        gl::BufferData(
-            gl::ELEMENT_ARRAY_BUFFER, // target
-            (indices.len() * std::mem::size_of::<u8>()) as gl::types::GLsizeiptr, // size of data in bytes
-            indices.as_ptr() as *const gl::types::GLvoid, // pointer to data
-            gl::STATIC_DRAW, // usage
-        );
-        gl::BindBuffer(gl::ARRAY_BUFFER, 0); // unbind the buffer
-        gl::BindBuffer(gl::ARRAY_BUFFER, vbo);
-        gl::EnableVertexAttribArray(0); // this is "layout (location = 0)" in vertex shader
-        gl::VertexAttribPointer(
-            0, // index of the generic vertex attribute ("layout (location = 0)")
-            2, // the number of components per generic vertex attribute
-            gl::FLOAT, // data type
-            gl::FALSE, // normalized (int-to-float conversion)
-            (2 * std::mem::size_of::<f32>()) as gl::types::GLint, // stride (byte offset between consecutive attributes)
-            std::ptr::null() // offset of the first component
-        );
-        gl::EnableVertexAttribArray(1); // this is "layout (location = 0)" in vertex shader
-        gl::VertexAttribPointer(
-            1, // index of the generic vertex attribute ("layout (location = 0)")
-            3, // the number of components per generic vertex attribute
-            gl::FLOAT, // data type
-            gl::FALSE, // normalized (int-to-float conversion)
-            (6 * std::mem::size_of::<f32>()) as gl::types::GLint, // stride (byte offset between consecutive attributes)
-            (3 * std::mem::size_of::<f32>()) as *const gl::types::GLvoid // offset of the first component
-        );
-        gl::BindVertexArray(0);
-    }
-    [vao, ibo, shader_program.gl_handle]
-}
-
-pub fn draw(draw_objects: [u32; 3], location: i32, r: f32){
-    unsafe{
-        gl::UseProgram(draw_objects[2]);
-        gl::Clear(gl::COLOR_BUFFER_BIT);
-        gl::Uniform4f(location, r, r, r, r);
-
-        gl::BindVertexArray(draw_objects[0]);
-        gl::BindBuffer(gl::ELEMENT_ARRAY_BUFFER, draw_objects[1]);
-        // gl::DrawArrays(gl::TRIANGLES, 0, 6);
-        gl::DrawElements(gl::TRIANGLES, 12, gl::UNSIGNED_BYTE, std::ptr::null());
-        gl::BindVertexArray(0);
-    }
-}
+// pub fn do_graphics_stuff() -> [u32; 3]{
+//     let vertex_code = "
+//     #version 330 core\n
+//
+//     layout (location = 0) in vec3 Position;\n
+//
+//     void main()
+//     {
+//         gl_Position = vec4(Position, 1.0);
+//     }
+//     ";
+//     let fragment_code = "
+//     #version 330 core\n
+//
+//     out vec4 Color;\n
+//     uniform vec4 u_Color;\n
+//     void main()
+//     {
+//         Color = u_Color;
+//     }
+//     ";
+//     let vertex_shader = create_new_shader!(vertex_code, gl::VERTEX_SHADER);
+//     let fragment_shader = create_new_shader!(fragment_code, gl::FRAGMENT_SHADER);
+//     let mut shader_program = ShaderProgram::new();
+//     shader_program.attach_shader(&vertex_shader);
+//     shader_program.attach_shader(&fragment_shader);
+//     shader_program.link();
+//     let s = "u_Color";
+//     let location = unsafe {gl::GetUniformLocation(shader_program.gl_handle, s.as_ptr() as *const gl::types::GLbyte)};
+//     shader_program.use_program();
+//     unsafe {gl::Uniform4f(location, 0.2, 0.3, 0.8, 1.0);}
+//
+//
+//
+// //do buffer stuff
+//     let vertices: Vec<f32> = vec![
+//     0.2, 0.4,
+//     0.4, 0.0,
+//     0.2, -0.4,
+//     -0.2, -0.4,
+//     -0.4, 0.0,
+//     -0.2, 0.4,
+//     ];
+//     let indices: Vec<u8> = vec![
+//     0, 4, 5,
+//     0, 1, 4,
+//     1, 3, 4,
+//     1, 2, 3,
+//     ];
+//     let mut vbo: gl::types::GLuint = 0;
+//     let mut ibo: gl::types::GLuint = 0;
+//     unsafe {
+//         gl::GenBuffers(1, &mut vbo);
+//         gl::BindBuffer(gl::ARRAY_BUFFER, vbo);
+//         gl::BufferData(
+//             gl::ARRAY_BUFFER, // target
+//             (vertices.len() * std::mem::size_of::<f32>()) as gl::types::GLsizeiptr, // size of data in bytes
+//             vertices.as_ptr() as *const gl::types::GLvoid, // pointer to data
+//             gl::STATIC_DRAW, // usage
+//         );
+//         gl::BindBuffer(gl::ARRAY_BUFFER, 0); // unbind the buffer
+//     }
+//     let mut vao: gl::types::GLuint = 0;
+//     unsafe {
+//         gl::GenVertexArrays(1, &mut vao);
+//         gl::BindVertexArray(vao);
+//         //get indice data
+//         gl::BindBuffer(gl::ELEMENT_ARRAY_BUFFER, 0);
+//         gl::GenBuffers(1, &mut ibo);
+//         gl::BindBuffer(gl::ELEMENT_ARRAY_BUFFER, ibo);
+//         gl::BufferData(
+//             gl::ELEMENT_ARRAY_BUFFER, // target
+//             (indices.len() * std::mem::size_of::<u8>()) as gl::types::GLsizeiptr, // size of data in bytes
+//             indices.as_ptr() as *const gl::types::GLvoid, // pointer to data
+//             gl::STATIC_DRAW, // usage
+//         );
+//         gl::BindBuffer(gl::ARRAY_BUFFER, 0); // unbind the buffer
+//         gl::BindBuffer(gl::ARRAY_BUFFER, vbo);
+//         gl::EnableVertexAttribArray(0); // this is "layout (location = 0)" in vertex shader
+//         gl::VertexAttribPointer(
+//             0, // index of the generic vertex attribute ("layout (location = 0)")
+//             2, // the number of components per generic vertex attribute
+//             gl::FLOAT, // data type
+//             gl::FALSE, // normalized (int-to-float conversion)
+//             (2 * std::mem::size_of::<f32>()) as gl::types::GLint, // stride (byte offset between consecutive attributes)
+//             std::ptr::null() // offset of the first component
+//         );
+//         gl::EnableVertexAttribArray(1); // this is "layout (location = 0)" in vertex shader
+//         gl::VertexAttribPointer(
+//             1, // index of the generic vertex attribute ("layout (location = 0)")
+//             3, // the number of components per generic vertex attribute
+//             gl::FLOAT, // data type
+//             gl::FALSE, // normalized (int-to-float conversion)
+//             (6 * std::mem::size_of::<f32>()) as gl::types::GLint, // stride (byte offset between consecutive attributes)
+//             (3 * std::mem::size_of::<f32>()) as *const gl::types::GLvoid // offset of the first component
+//         );
+//         gl::BindVertexArray(0);
+//     }
+//     [vao, ibo, shader_program.gl_handle]
+// }
+//
+// pub fn draw(draw_objects: [u32; 3], location: i32, r: f32){
+//     unsafe{
+//         gl::UseProgram(draw_objects[2]);
+//         gl::Clear(gl::COLOR_BUFFER_BIT);
+//         gl::Uniform4f(location, r, r, r, r);
+//
+//         gl::BindVertexArray(draw_objects[0]);
+//         gl::BindBuffer(gl::ELEMENT_ARRAY_BUFFER, draw_objects[1]);
+//         // gl::DrawArrays(gl::TRIANGLES, 0, 6);
+//         gl::DrawElements(gl::TRIANGLES, 12, gl::UNSIGNED_BYTE, std::ptr::null());
+//         gl::BindVertexArray(0);
+//     }
+// }
+// // }

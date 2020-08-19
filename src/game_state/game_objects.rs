@@ -1,9 +1,11 @@
-pub mod graphics;
+#[path =".././graphics.rs"]
+mod graphics;
 mod chemistry;
 
 const COEFFICIENT_OF_X: f64 = 0.5;
 const COEFFICIENT_OF_Y: f64 = 0.8660254038;
 
+#[derive(Copy, Clone)]
 pub struct Position{
     pub x: f64,
     pub y: f64,
@@ -117,6 +119,10 @@ impl Hexagon{
     pub fn render_hexagon(&self, camera: &Camera){
         self.renderer.draw_object(self.creater_render_vertices(camera));
     }
+
+    pub fn set_color(&mut self, r: f32, g: f32, b: f32, a: f32){
+        self.renderer.set_color(r, g, b, a);
+    }
 }
 
 pub struct Camera {
@@ -130,6 +136,11 @@ impl Camera {
             position: Position::new(),
             scale: 50.0
         }
+    }
+
+    pub fn zoom(&mut self, y: i32){
+        let zoom_amount = self.scale / 100.0;
+        self.scale += zoom_amount * y as f64;
     }
 }
 
@@ -147,6 +158,7 @@ impl Tile {
             formula: assigned_formula,
         }
     }
+
 }
 
 pub struct Chunk {
@@ -162,8 +174,15 @@ impl Chunk {
             for y in -chunk_size..chunk_size {
                 for z in -chunk_size..chunk_size {
                     if x+y+z == 0 {
-                        tiles.push(EnviromentalTile{tile: Tile::new("stone".to_string(),
-                        CubicCoordinate{x,y,z}, camera)});
+                        let mut tile = EnviromentalTile{tile: Tile::new("stone".to_string(),
+                        CubicCoordinate{x,y,z},
+                        camera)};
+                        let r = (x as f32/50.0).abs();
+                        let g = (y as f32/50.0).abs();
+                        let b = (z as f32/50.0).abs();
+                        println!("{:?}", r);
+                        tile.tile.hexagon.set_color(r, g, b, 1.0);
+                        tiles.push(tile);
                     }
                 }
             }
