@@ -2,6 +2,10 @@
 mod graphics;
 pub mod chemistry;
 
+
+pub const CHUNK_SIZE: i128 = 50;
+
+
 #[derive(Copy, Clone)]
 pub struct Position{
     pub x: f64,
@@ -41,10 +45,11 @@ pub struct NormalizedPosition {
     y: f32,
 }
 
+#[derive(Copy, Clone)]
 pub struct CubicCoordinate{
-    x: i128,
-    y: i128,
-    z: i128,
+    pub x: i128,
+    pub y: i128,
+    pub z: i128,
 }
 
 impl CubicCoordinate {
@@ -130,6 +135,10 @@ impl Hexagon{
     fn creater_render_vertices(&self, camera: &Camera) -> Vec<f32>{
         let normalized_position: NormalizedPosition = Hexagon::world_space_to_screen_space(
             &self.position, camera);
+        // if normalized_position.x > 1.1 || normalized_position.x < -1.1 ||
+        // normalized_position.y > 1.1 || normalized_position.y < -1.1{
+        //     return vec![];
+        // }
         Hexagon::normalized_vertex_array(&normalized_position, camera)
     }
 
@@ -162,9 +171,9 @@ impl Camera {
 }
 
 pub struct Tile {
-    hexagon: Hexagon,
+    pub hexagon: Hexagon,
     formula: String,
-    molecule: chemistry::Molecule,
+    pub molecule: chemistry::Molecule,
 }
 
 impl Tile {
@@ -179,19 +188,10 @@ impl Tile {
             molecule: new_molecule,
         }
     }
-
-
-
-    // pub fn get_molecule(formula: &String, dictionary: &chemistry::MaterialDictionary) ->
-    // Molecule{
-    //     let molecule = dictionary.dictionary.get(formula);
-    //
-    // }
-
 }
 
 pub struct EnviromentalTile {
-    tile: Tile,
+    pub tile: Tile,
     cubic_position: CubicCoordinate,
 }
 
@@ -228,48 +228,44 @@ impl EnviromentalTile {
     }
 }
 
+pub struct tile_state{
+
+}
+
 pub struct Chunk {
-    enviromental_tiles: Vec<EnviromentalTile>,
-    planetary_position: CubicCoordinate,
+    // enviromental_tiles: Vec<EnviromentalTile>,
+    pub cubic_position: CubicCoordinate,
 }
 
-impl Chunk {
-    pub fn load_chunk(camera: &Camera, dictionary: &chemistry::MaterialDictionary) -> Chunk{
-        let mut tiles: Vec<EnviromentalTile> = vec![];
-        let chunk_size: i128 = 50;
-        for x in -chunk_size..chunk_size {
-            for y in -chunk_size..chunk_size {
-                for z in -chunk_size..chunk_size {
-                    if x+y+z == 0 {
-                        let mut tile = EnviromentalTile::spawn(
-                            CubicCoordinate{x,y,z}, dictionary, camera);
-                        // let r = (x as f32/50.0).abs();
-                        // let g = (y as f32/50.0).abs();
-                        // let b = (z as f32/50.0).abs();
-                        tile.tile.hexagon.set_color(
-                            tile.tile.molecule.color[0],
-                            tile.tile.molecule.color[1],
-                            tile.tile.molecule.color[2],
-                            tile.tile.molecule.color[3]
-                        );
-                        tiles.push(tile);
-                    }
-                }
-            }
-        }
-        Chunk{enviromental_tiles: tiles, planetary_position: CubicCoordinate::new()}
-    }
-
-    pub fn draw_tiles(&self, camera: &Camera){
-        for tile in &self.enviromental_tiles {
-            tile.tile.hexagon.render_hexagon(camera);
-        }
-    }
-}
+// impl Chunk {
+//     pub fn load_chunk(camera: &Camera, dictionary: &chemistry::MaterialDictionary,
+//         chunk_coordinate: CubicCoordinate) -> Chunk
+//     {
+//         // let mut tiles: Vec<EnviromentalTile> = vec![];
+//
+//         Chunk{cubic_position: CubicCoordinate::new()}
+//     }
+//
+//     pub fn draw_tiles(&self, camera: &Camera){
+//         for tile in &self.enviromental_tiles {
+//             if ((tile.tile.hexagon.position.x - camera.position.x) / camera.scale).abs() < 1.1 ||
+//             ((tile.tile.hexagon.position.y - camera.position.y) / camera.scale).abs() < 1.1{
+//                 tile.tile.hexagon.render_hexagon(camera);
+//             }
+//
+//         }
+//     }
+// }
 
 pub struct Planet {
-    position: Position,
+    // position: Position,
     // snap_position: OffsetCoordinate,
     planetary_position: CubicCoordinate,
-    seed: *const u128,
+    // seed: *const u128,
+}
+
+impl Planet{
+    pub fn new() -> Planet{
+        Planet{planetary_position: CubicCoordinate::new()}
+    }
 }
