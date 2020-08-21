@@ -1,5 +1,5 @@
-#[path =".././graphics.rs"]
-mod graphics;
+extern crate kyles_gl_api;
+use kyles_gl_api::graphics;
 pub mod chemistry;
 
 
@@ -82,12 +82,16 @@ impl AxialCoordinate {
         let new_r = cubic_coordinate.z;
         AxialCoordinate{q: new_q, r: new_r}
     }
+
+    // pub fn position_to_axial(position: Position) -> AxialCoordinate{
+    //
+    // }
 }
 
 
 pub struct Hexagon{
     pub position: Position,
-    pub renderer: graphics::Renderer,
+    // pub renderer: graphics::Renderer,
 }
 
 impl Hexagon{
@@ -99,14 +103,14 @@ impl Hexagon{
         // Hexagon{position: pos, renderer: rend}
         Hexagon{
             position: Position::new(),
-            renderer: graphics::Renderer::new(),
+            // renderer: graphics::Renderer::new(),
         }
     }
 
     pub fn initialize_hexagon(set_position: &Position, camera: &Camera) -> Hexagon{
         let mut hexagon = Hexagon::new();
         hexagon.position = *set_position;
-        hexagon.renderer.initialize_object_renderer(hexagon.creater_render_vertices(camera));
+        // hexagon.renderer.initialize_object_renderer(hexagon.creater_render_vertices(camera));
         hexagon
     }
 
@@ -118,21 +122,21 @@ impl Hexagon{
         NormalizedPosition{x: normalized_x, y: normalized_y}
     }
 
-    pub fn normalized_vertex_array(position: &NormalizedPosition, camera: &Camera) -> Vec<f32>{
+    pub fn normalized_vertex_array(position: &NormalizedPosition, camera: &Camera) -> [graphics::Vertex; 6]{
         let scale = camera.scale as f32;
         let distance_x = 0.5 / scale;
         let distance_y = 0.2886751346 / scale;
-        vec![
-        position.x, (position.y + (0.5773502692 / scale)),
-        (position.x + distance_x), (position.y + distance_y),
-        (position.x + distance_x), (position.y - distance_y),
-        position.x, (position.y - (0.5773502692 / scale)),
-        (position.x - distance_x), (position.y - distance_y),
-        (position.x - distance_x), (position.y + distance_y)
+        [
+        graphics::Vertex{position: [position.x, (position.y + (0.5773502692 / scale))]},
+        graphics::Vertex{position: [(position.x + distance_x), (position.y + distance_y)]},
+        graphics::Vertex{position: [(position.x + distance_x), (position.y - distance_y)]},
+        graphics::Vertex{position: [position.x, (position.y - (0.5773502692 / scale))]},
+        graphics::Vertex{position: [(position.x - distance_x), (position.y - distance_y)]},
+        graphics::Vertex{position: [(position.x - distance_x), (position.y + distance_y)]}
         ]
     }
 
-    fn creater_render_vertices(&self, camera: &Camera) -> Vec<f32>{
+    pub fn creater_render_vertices(&self, camera: &Camera) -> [graphics::Vertex; 6]{
         let normalized_position: NormalizedPosition = Hexagon::world_space_to_screen_space(
             &self.position, camera);
         // if normalized_position.x > 1.1 || normalized_position.x < -1.1 ||
@@ -142,13 +146,13 @@ impl Hexagon{
         Hexagon::normalized_vertex_array(&normalized_position, camera)
     }
 
-    pub fn render_hexagon(&self, camera: &Camera){
-        self.renderer.draw_object(self.creater_render_vertices(camera));
-    }
+    // pub fn render_hexagon(&self, camera: &Camera){
+    //     self.renderer.draw_object(self.creater_render_vertices(camera));
+    // }
 
-    pub fn set_color(&mut self, r: f32, g: f32, b: f32, a: f32){
-        self.renderer.set_color(r, g, b, a);
-    }
+    // pub fn set_color(&mut self, r: f32, g: f32, b: f32, a: f32){
+    //     self.renderer.set_color(r, g, b, a);
+    // }
 }
 
 pub struct Camera {

@@ -95,6 +95,13 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "037ab472c33f67b5fbd3e9163a2645319e5356fcd355efa6d4eb7fff4bbcb554"
 
 [[package]]
+name = "kyles_gl_api"
+version = "0.1.0"
+dependencies = [
+ "gl",
+]
+
+[[package]]
 name = "lazy_static"
 version = "1.4.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -135,6 +142,7 @@ name = "molar_system"
 version = "0.1.0"
 dependencies = [
  "gl",
+ "kyles_gl_api",
  "nalgebra",
  "sdl2",
 ]

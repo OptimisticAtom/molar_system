@@ -5,8 +5,8 @@ use std::time::{Duration, Instant};
 use std::collections::HashMap;
 
 
-#[path ="graphics.rs"]
-mod graphics;
+extern crate kyles_gl_api;
+use kyles_gl_api::graphics;
 mod game_objects;
 
 
@@ -26,7 +26,7 @@ pub struct Simulation {
 }
 
 impl Simulation {
-    pub fn start_simulation(fps: u8) -> Simulation{
+    pub fn new(fps: u8) -> Simulation{
         // const new_seed: u128 = 1;
         let fraction_of_second: f64 = 1.0 / fps as f64;
         let frame_as_microseconds: u64 = (fraction_of_second * 1e+6) as u64;
@@ -49,6 +49,10 @@ impl Simulation {
             global_step_count: 0,
             material_dictionary: game_objects::chemistry::MaterialDictionary::new(),
         }
+    }
+
+    pub fn start_simulation(&mut self){
+        self.chunck_loader.enviroment_renderer.initialize_object_renderer();
     }
 
     pub fn loop_call(&mut self){
@@ -82,7 +86,7 @@ impl Simulation {
         self.chunck_loader.load_chunks(&self.main_camera, &self.material_dictionary)
     }
 
-    fn draw_new_screen(&self){
+    fn draw_new_screen(&mut self){
         unsafe{graphics::gl::Clear(graphics::gl::COLOR_BUFFER_BIT);}
         self.chunck_loader.draw_tiles(&self.main_camera);
     }
@@ -98,12 +102,17 @@ impl Simulation {
 pub struct ChunkLoader {
     loaded_chunks: HashMap<[i128; 3], game_objects::Chunk>,
     loaded_tiles: HashMap<[i128; 3], game_objects::EnviromentalTile>,
+    enviroment_renderer: graphics::EnviromentRenderer,
     player: Player,
 }
 
 impl ChunkLoader {
     pub fn new() -> ChunkLoader{
-        ChunkLoader{loaded_chunks: HashMap::new(), loaded_tiles: HashMap::new(), player: Player::new()}
+        ChunkLoader{
+            loaded_chunks: HashMap::new(),
+            loaded_tiles: HashMap::new(),
+            enviroment_renderer: graphics::EnviromentRenderer::new(),
+            player: Player::new()}
     }
 
     pub fn load_chunks(&mut self, camera: &game_objects::Camera,
@@ -169,26 +178,60 @@ impl ChunkLoader {
                         // let r = (x as f32/50.0).abs();
                         // let g = (y as f32/50.0).abs();
                         // let b = (z as f32/50.0).abs();
-                        tile.tile.hexagon.set_color(
-                            tile.tile.molecule.color[0],
-                            tile.tile.molecule.color[1],
-                            tile.tile.molecule.color[2],
-                            tile.tile.molecule.color[3]
-                        );
+                        // tile.tile.hexagon.set_color(
+                        //     tile.tile.molecule.color[0],
+                        //     tile.tile.molecule.color[1],
+                        //     tile.tile.molecule.color[2],
+                        //     tile.tile.molecule.color[3]
+                        // );
                         // tiles.push(tile);
                         let key = [x + chunk_coordinate.x, y + chunk_coordinate.y, z + chunk_coordinate.z];
                         self.loaded_tiles.insert(key, tile);
-                        println!("loaded tile{:?}", key);
+                        // println!("loaded tile{:?}", key);
                     }
                 }
             }
         }
     }
 
-    pub fn draw_tiles(&self, camera: &game_objects::Camera){
+    pub fn draw_tiles(&mut self, camera: &game_objects::Camera){
+        // let range = camera.scale as i128;
+        // let range_x = (self.camera.position.x + range);
+        // let range_z = (self.player.cubic_position.z + range);
+        // for x in -range_x..range_x {
+        //     for z in std::cmp::max(-range_z, -x-range_z)..std::cmp::min(range_z, -x+range_z) {
+        //         let y = -x-z;
+        //         let option = self.loaded_tiles.get(&[x,y,z]);
+        //         if option.is_some(){
+        //             let tile = option.unwrap();
+        //             tile.tile.hexagon.render_hexagon(camera);
+        //         }
+        //         // tile.tile.hexagon.render_hexagon(camera);
+        //     }
+        // }
+        let mut vertices: Vec<graphics::Vertex> = vec![];
+        let mut indices: Vec<u32> = vec![];
         for hash in &self.loaded_tiles {
-            hash.1.tile.hexagon.render_hexagon(camera);
+            let hex_verts = hash.1.tile.hexagon.creater_render_vertices(camera);
+            let mut hex_indices = [0u32; 12];
+            for i in 0..6 {
+                let vert = vertices.len() as u32;
+                vertices.push(hex_verts[i]);
+                match i{
+                    0 => {hex_indices[0] = vert; hex_indices[3] = vert;},
+                    1 => {hex_indices[4] = vert; hex_indices[6] = vert; hex_indices[9] = vert;},
+                    2 => {hex_indices[10] = vert},
+                    3 => {hex_indices[7] = vert; hex_indices[11] = vert;},
+                    4 => {hex_indices[1] = vert; hex_indices[5] = vert; hex_indices[8] = vert;},
+                    5 => {hex_indices[2] = vert},
+                    _ => {println!("game_state::draw_tiles - vertices are out of bounds{:?}", i);}
+                }
+            }
+            for i in 0..12 {
+                indices.push(hex_indices[i]);
+            }
         }
+        self.enviroment_renderer.draw_object(vertices, indices);
     }
 }
 

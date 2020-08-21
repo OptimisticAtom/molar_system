@@ -27,7 +27,8 @@ fn main() {
 
     }
     let mut event_pump = sdl.event_pump().unwrap();
-    let mut game = game_state::Simulation::start_simulation(60);
+    let mut game = game_state::Simulation::new(60);
+    game.start_simulation();
     let mut keydown = false;
     'main: loop{
         for event in event_pump.poll_iter() {

@@ -10,3 +10,4 @@ edition = "2018"
 sdl2 = "0.34.2"
 gl = "0.10.0"
 nalgebra = "0.18"
+kyles_gl_api = {path = "../kyles_gl_api"}
