@@ -28,7 +28,7 @@ impl Position {
 
         let mat4: nalgebra::Matrix2x1<f64> = mat3;
 
-        Position{x: mat4.data[0], y: mat4.data[1]}
+        Position{x: mat4.data[0], y: -mat4.data[1]}
     }
 
     pub fn cubic_to_position(cubic_coordinate: &CubicCoordinate) -> Position{
@@ -65,6 +65,48 @@ impl CubicCoordinate {
         ((coord1.x - coord2.x).abs() +
         (coord1.y - coord2.y).abs() + (coord1.z - coord2.z).abs()) as u128
     }
+
+    pub fn get_neighbor(cubic_coordinate: CubicCoordinate, neighbor: i8) -> CubicCoordinate{
+        match neighbor {
+            0 => {CubicCoordinate{
+                x: (cubic_coordinate.x + 1), y: cubic_coordinate.y, z: (cubic_coordinate.z - 1)}},
+            1 => {CubicCoordinate{
+                x: (cubic_coordinate.x + 1), y: (cubic_coordinate.y - 1), z: cubic_coordinate.z}},
+            2 => {CubicCoordinate{
+                x: cubic_coordinate.x, y: (cubic_coordinate.y - 1), z: (cubic_coordinate.z + 1)}},
+            3 => {CubicCoordinate{
+                x: (cubic_coordinate.x - 1), y: cubic_coordinate.y, z: (cubic_coordinate.z + 1)}},
+            4 => {CubicCoordinate{
+                x: (cubic_coordinate.x - 1), y: (cubic_coordinate.y + 1), z: cubic_coordinate.z}},
+            5 => {CubicCoordinate{
+                x: cubic_coordinate.x, y: (cubic_coordinate.y + 1), z: (cubic_coordinate.z - 1)}},
+            6 => {cubic_coordinate},
+        _ => {println!("hexagon at {:?},{:?},{:?} asked for neighbor {:?} which is not an option"
+            , cubic_coordinate.x, cubic_coordinate.y, cubic_coordinate.z, neighbor);
+            CubicCoordinate::new()}
+        }
+    }
+
+    pub fn get_neighbor_chunk(cubic_coordinate: CubicCoordinate, neighbor: i8) -> CubicCoordinate{
+        match neighbor {
+            0 => {CubicCoordinate{
+                x: (cubic_coordinate.x + 50), y: (cubic_coordinate.y + 50), z: (cubic_coordinate.z - 100)}},
+            1 => {CubicCoordinate{
+                x: (cubic_coordinate.x + 100), y: (cubic_coordinate.y- 50), z: (cubic_coordinate.z - 50)}},
+            2 => {CubicCoordinate{
+                x: cubic_coordinate.x + 50, y: (cubic_coordinate.y - 100), z: cubic_coordinate.z + 50}},
+            3 => {CubicCoordinate{
+                x: (cubic_coordinate.x - 50), y: (cubic_coordinate.y - 50), z: (cubic_coordinate.z + 100)}},
+            4 => {CubicCoordinate{
+                x: (cubic_coordinate.x - 100), y: (cubic_coordinate.y + 50), z: (cubic_coordinate.z + 50)}},
+            5 => {CubicCoordinate{
+                x: (cubic_coordinate.x - 50), y: cubic_coordinate.y + 100, z: (cubic_coordinate.z - 50)}},
+            6 => {cubic_coordinate},
+        _ => {println!("hexagon at {:?},{:?},{:?} asked for neighbor {:?} which is not an option"
+            , cubic_coordinate.x, cubic_coordinate.y, cubic_coordinate.z, neighbor);
+            CubicCoordinate::new()}
+        }
+    }
 }
 
 pub struct AxialCoordinate {
@@ -78,8 +120,8 @@ impl AxialCoordinate {
     }
 
     pub fn cubic_to_axial(cubic_coordinate: &CubicCoordinate) -> AxialCoordinate{
-        let new_q = cubic_coordinate.x;
-        let new_r = cubic_coordinate.z;
+        let new_q = cubic_coordinate.z;
+        let new_r = cubic_coordinate.x;
         AxialCoordinate{q: new_q, r: new_r}
     }
 
@@ -91,6 +133,7 @@ impl AxialCoordinate {
 
 pub struct Hexagon{
     pub position: Position,
+    pub color: [f32; 4],
     // pub renderer: graphics::Renderer,
 }
 
@@ -103,6 +146,7 @@ impl Hexagon{
         // Hexagon{position: pos, renderer: rend}
         Hexagon{
             position: Position::new(),
+            color: [0.2, 0.8, 0.2, 1.0],
             // renderer: graphics::Renderer::new(),
         }
     }
@@ -122,17 +166,37 @@ impl Hexagon{
         NormalizedPosition{x: normalized_x, y: normalized_y}
     }
 
-    pub fn normalized_vertex_array(position: &NormalizedPosition, camera: &Camera) -> [graphics::Vertex; 6]{
+    pub fn normalized_vertex_array(position: &NormalizedPosition, base_color: [f32; 4],
+        camera: &Camera) -> [graphics::Vertex; 6]
+    {
         let scale = camera.scale as f32;
         let distance_x = 0.5 / scale;
         let distance_y = 0.2886751346 / scale;
         [
-        graphics::Vertex{position: [position.x, (position.y + (0.5773502692 / scale))]},
-        graphics::Vertex{position: [(position.x + distance_x), (position.y + distance_y)]},
-        graphics::Vertex{position: [(position.x + distance_x), (position.y - distance_y)]},
-        graphics::Vertex{position: [position.x, (position.y - (0.5773502692 / scale))]},
-        graphics::Vertex{position: [(position.x - distance_x), (position.y - distance_y)]},
-        graphics::Vertex{position: [(position.x - distance_x), (position.y + distance_y)]}
+        graphics::Vertex{
+            position: [position.x, (position.y + (0.5773502692 / scale))],
+            color: base_color,
+        },
+        graphics::Vertex{
+            position: [(position.x + distance_x), (position.y + distance_y)],
+            color: base_color,
+        },
+        graphics::Vertex{
+            position: [(position.x + distance_x), (position.y - distance_y)],
+            color: base_color,
+        },
+        graphics::Vertex{
+            position: [position.x, (position.y - (0.5773502692 / scale))],
+            color: base_color,
+        },
+        graphics::Vertex{
+            position: [(position.x - distance_x), (position.y - distance_y)],
+            color: base_color,
+        },
+        graphics::Vertex{
+            position: [(position.x - distance_x), (position.y + distance_y)],
+            color: base_color,
+        }
         ]
     }
 
@@ -143,16 +207,16 @@ impl Hexagon{
         // normalized_position.y > 1.1 || normalized_position.y < -1.1{
         //     return vec![];
         // }
-        Hexagon::normalized_vertex_array(&normalized_position, camera)
+        Hexagon::normalized_vertex_array(&normalized_position, self.color, camera)
     }
 
     // pub fn render_hexagon(&self, camera: &Camera){
     //     self.renderer.draw_object(self.creater_render_vertices(camera));
     // }
 
-    // pub fn set_color(&mut self, r: f32, g: f32, b: f32, a: f32){
-    //     self.renderer.set_color(r, g, b, a);
-    // }
+    pub fn set_color(&mut self, r: f32, g: f32, b: f32, a: f32){
+        self.color = [r, g, b, a];
+    }
 }
 
 pub struct Camera {
@@ -220,14 +284,20 @@ impl EnviromentalTile {
 
         let cartesian_distance_from_center = Position::distance(position, &Position::new());
 
-        if cartesian_distance_from_center < 20.0 {
+        if cartesian_distance_from_center < 50.0{
+            return  "magma".to_string();
+        }
+        else if cartesian_distance_from_center < 80.0{
             return "stone".to_string();
         }
-        else if cartesian_distance_from_center < 40.0{
+        else if cartesian_distance_from_center < 90.0{
             return "dirt".to_string();
         }
-        else{
+        else if cartesian_distance_from_center < 95.0{
             return "air".to_string();
+        }
+        else{
+            return "vacum".to_string();
         }
     }
 }

@@ -118,36 +118,52 @@ impl ChunkLoader {
     pub fn load_chunks(&mut self, camera: &game_objects::Camera,
         dictionary: &game_objects::chemistry::MaterialDictionary)
     {
-        let render_distance: i128 = 2;
-        let vicinity_x: i128 = (self.player.cubic_position.x / 100) + render_distance;
-        let vicinity_y: i128 = (self.player.cubic_position.y / 100) + render_distance;
-        let vicinity_z: i128 = (self.player.cubic_position.z / 100) + render_distance;
-        for x in -vicinity_x..vicinity_x {
-            for y in -vicinity_y..vicinity_y {
-                for z in -vicinity_z..vicinity_z {
-                    if x+y+z == 0 {
-                        // let mut is_loaded = false;
-                        // if self.loaded_chunks.len() > 0{
-                        //     for chunk in &self.loaded_chunks {
-                        //         if chunk.chunk_position.x == chunk_position.x &&
-                        //         chunk.chunk_position.y == chunk_position.y &&
-                        //         chunk.chunk_position.z == chunk_position.z{
-                        //             is_loaded = true;
-                        //         }
-                        //     }
-                        // }
-                        let chunk_position = game_objects::CubicCoordinate{x: (x*100), y: (y*100), z: (z*100)};
-                        let key = [chunk_position.x, chunk_position.y, chunk_position.z];
-                        if !self.loaded_chunks.contains_key(&key){
-                            self.loaded_chunks.insert(key, game_objects::Chunk{cubic_position: chunk_position});
-                            self.load_chunk_of_tiles(camera, dictionary, chunk_position);
-                            // self.load_chunk(chunk_position, dictionary, camera);
-                            println!("loaded chunk: x{:?}, y{:?}, z{:?}", x, y, z);
-                        }
-                    }
-                }
+        // let render_distance: i128 = 2;
+        let chunk_x: i128 = (self.player.cubic_position.x / 100);
+        let chunk_y: i128 = (self.player.cubic_position.y / 100);
+        let chunk_z: i128 = (self.player.cubic_position.z / 100);
+        for neighboring_chunk in 0..7 {
+            let neighbor = game_objects::CubicCoordinate::
+            get_neighbor_chunk(game_objects::CubicCoordinate{x: chunk_x, y: chunk_y, z: chunk_z},
+                neighboring_chunk);
+
+            let chunk_position = game_objects::CubicCoordinate{
+                x: (neighbor.x), y: (neighbor.y), z: (neighbor.z)};
+
+            let key = [chunk_position.x, chunk_position.y, chunk_position.z];
+            if !self.loaded_chunks.contains_key(&key){
+                self.loaded_chunks.insert(key, game_objects::Chunk{cubic_position: chunk_position});
+                self.load_chunk_of_tiles(camera, dictionary, chunk_position);
+                // self.load_chunk(chunk_position, dictionary, camera);
+                println!("loaded chunk: x{:?}, y{:?}, z{:?}", chunk_position.x, chunk_position.y, chunk_position.z);
             }
         }
+        // for x in -vicinity_x..vicinity_x {
+        //     for y in -vicinity_y..vicinity_y {
+        //         for z in -vicinity_z..vicinity_z {
+        //             if x+y+z == 0 {
+        //                 // let mut is_loaded = false;
+        //                 // if self.loaded_chunks.len() > 0{
+        //                 //     for chunk in &self.loaded_chunks {
+        //                 //         if chunk.chunk_position.x == chunk_position.x &&
+        //                 //         chunk.chunk_position.y == chunk_position.y &&
+        //                 //         chunk.chunk_position.z == chunk_position.z{
+        //                 //             is_loaded = true;
+        //                 //         }
+        //                 //     }
+        //                 // }
+        //                 let chunk_position = game_objects::CubicCoordinate{x: (x*100), y: (y*100), z: (z*100)};
+        //                 let key = [chunk_position.x, chunk_position.y, chunk_position.z];
+        //                 if !self.loaded_chunks.contains_key(&key){
+        //                     self.loaded_chunks.insert(key, game_objects::Chunk{cubic_position: chunk_position});
+        //                     self.load_chunk_of_tiles(camera, dictionary, chunk_position);
+        //                     // self.load_chunk(chunk_position, dictionary, camera);
+        //                     println!("loaded chunk: x{:?}, y{:?}, z{:?}", x, y, z);
+        //                 }
+        //             }
+        //         }
+        //     }
+        // }
     }
 
     // pub fn load_chunk(&mut self, cubic_coordinate: game_objects::CubicCoordinate,
@@ -161,35 +177,32 @@ impl ChunkLoader {
         chunk_coordinate: game_objects::CubicCoordinate){
         let chunk_size: i128 = game_objects::CHUNK_SIZE;
         let count = 0;
-        for x in -chunk_size..chunk_size {
-            for y in -chunk_size..chunk_size {
-                for z in -chunk_size..chunk_size {
-                    if x+y+z == 0 {
-                        // if x.abs() == CHUNK_SIZE || y.abs() == CHUNK_SIZE || z.abs() == CHUNK_SIZE{
-                        //
-                        // }
-                        let mut tile = game_objects::EnviromentalTile::spawn(
-                            game_objects::CubicCoordinate{
-                                x: (x + chunk_coordinate.x),
-                                y: (y + chunk_coordinate.y),
-                                z: (z + chunk_coordinate.z)
-                            },
-                            dictionary, camera);
-                        // let r = (x as f32/50.0).abs();
-                        // let g = (y as f32/50.0).abs();
-                        // let b = (z as f32/50.0).abs();
-                        // tile.tile.hexagon.set_color(
-                        //     tile.tile.molecule.color[0],
-                        //     tile.tile.molecule.color[1],
-                        //     tile.tile.molecule.color[2],
-                        //     tile.tile.molecule.color[3]
-                        // );
-                        // tiles.push(tile);
-                        let key = [x + chunk_coordinate.x, y + chunk_coordinate.y, z + chunk_coordinate.z];
-                        self.loaded_tiles.insert(key, tile);
-                        // println!("loaded tile{:?}", key);
-                    }
-                }
+        for x in -chunk_size..chunk_size + 1 {
+            for y in std::cmp::max(-chunk_size, -x-chunk_size)..std::cmp::min(chunk_size, -x+chunk_size) + 1 {
+                let z = -x-y;
+                // if x.abs() == CHUNK_SIZE || y.abs() == CHUNK_SIZE || z.abs() == CHUNK_SIZE{
+                //
+                // }
+                let mut tile = game_objects::EnviromentalTile::spawn(
+                    game_objects::CubicCoordinate{
+                        x: (x + chunk_coordinate.x),
+                        y: (y + chunk_coordinate.y),
+                        z: (z + chunk_coordinate.z)
+                    },
+                    dictionary, camera);
+                // let r = (x as f32/50.0).abs();
+                // let g = (y as f32/50.0).abs();
+                // let b = (z as f32/50.0).abs();
+                tile.tile.hexagon.set_color(
+                    tile.tile.molecule.color[0],
+                    tile.tile.molecule.color[1],
+                    tile.tile.molecule.color[2],
+                    tile.tile.molecule.color[3]
+                );
+                // tiles.push(tile);
+                let key = [x + chunk_coordinate.x, y + chunk_coordinate.y, z + chunk_coordinate.z];
+                self.loaded_tiles.insert(key, tile);
+                // println!("loaded tile{:?}", key);
             }
         }
     }

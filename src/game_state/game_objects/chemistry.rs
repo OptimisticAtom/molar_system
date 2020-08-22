@@ -21,8 +21,10 @@ impl MaterialDictionary {
     pub fn new() -> MaterialDictionary{
         let mut hashmap = HashMap::new();
         hashmap.insert("stone".to_string(), Molecule{color: [0.5, 0.5, 0.5, 1.0]});
-        hashmap.insert("dirt".to_string(), Molecule{color: [0.6, 0.6, 0.2, 1.0]});
+        hashmap.insert("dirt".to_string(), Molecule{color: [0.5, 0.6, 0.2, 1.0]});
         hashmap.insert("air".to_string(), Molecule{color: [0.1, 0.5, 0.9, 0.7]});
+        hashmap.insert("magma".to_string(), Molecule{color: [0.9, 0.5, 0.1, 1.0]});
+        hashmap.insert("vacum".to_string(), Molecule{color: [0.1, 0.5, 0.9, 0.0]});
         MaterialDictionary{dictionary: hashmap}
     }
 
