@@ -60,6 +60,15 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "a06f77d526c1a601b7c4cdd98f54b5eaabffc14d5f2f0296febdc7f357c6d3ba"
 
 [[package]]
+name = "game_objects"
+version = "0.1.0"
+dependencies = [
+ "gl_api",
+ "nalgebra",
+ "science",
+]
+
+[[package]]
 name = "generic-array"
 version = "0.12.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -78,6 +87,14 @@ dependencies = [
 ]
 
 [[package]]
+name = "gl_api"
+version = "0.1.0"
+dependencies = [
+ "gl",
+ "nalgebra",
+]
+
+[[package]]
 name = "gl_generator"
 version = "0.9.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -93,13 +110,6 @@ name = "khronos_api"
 version = "2.2.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "037ab472c33f67b5fbd3e9163a2645319e5356fcd355efa6d4eb7fff4bbcb554"
-
-[[package]]
-name = "kyles_gl_api"
-version = "0.1.0"
-dependencies = [
- "gl",
-]
 
 [[package]]
 name = "lazy_static"
@@ -141,9 +151,11 @@ dependencies = [
 name = "molar_system"
 version = "0.1.0"
 dependencies = [
+ "game_objects",
  "gl",
- "kyles_gl_api",
+ "gl_api",
  "nalgebra",
+ "science",
  "sdl2",
 ]
 
@@ -324,6 +336,13 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "678054eb77286b51581ba43620cc911abf02758c91f93f479767aed0f90458b2"
 dependencies = [
  "rand_core 0.3.1",
+]
+
+[[package]]
+name = "science"
+version = "0.1.0"
+dependencies = [
+ "nalgebra",
 ]
 
 [[package]]

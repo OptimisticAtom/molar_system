@@ -1,5 +1,5 @@
 [package]
-name = "molar_system"
+name = "gl_api"
 version = "0.1.0"
 authors = ["OptimisticAtom <optimisticatom@outlook.com>"]
 edition = "2018"
@@ -7,11 +7,5 @@ edition = "2018"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-sdl2 = "0.34.2"
 gl = "0.10.0"
 nalgebra = "0.18"
-game_objects = { path = "game_objects" }
-science = { path = "science" }
-gl_api = { path = "gl_api" }
-# kyles_gl_api = {path = "../kyles_gl_api"}
-# molar_system_lib = {path = "../molar_system_lib"}

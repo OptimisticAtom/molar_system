@@ -1,7 +1,8 @@
-extern crate kyles_gl_api;
-use kyles_gl_api::graphics;
-pub mod chemistry;
-
+extern crate gl_api;
+use gl_api::graphics;
+extern crate science;
+use science::chemistry;
+use std::f32::consts::PI;
 
 pub const CHUNK_SIZE: i128 = 50;
 
@@ -22,7 +23,7 @@ impl Position {
         nalgebra::Matrix2::new(1.732050808, 0.8660254038,0.0,1.5);
         //--------------
         let mat2: nalgebra::Matrix2x1<f64> =
-        nalgebra::Matrix2x1::new(axial_coordinate.r as f64, axial_coordinate.q as f64);
+        nalgebra::Matrix2x1::new(axial_coordinate.q as f64, axial_coordinate.r as f64);
         //--------------
         let mat3: nalgebra::Matrix2x1<f64> = 1.0/1.732050808 * mat * mat2;
 
@@ -57,9 +58,16 @@ impl CubicCoordinate {
         CubicCoordinate{x: 0, y: 0, z: 0}
     }
 
-    // pub fn axial_to_cubic(axial_coordinate: &AxialCoordinate) -> CubicCoordinate{
-    //
-    // }
+    pub fn axial_to_cubic(axial_coordinate: &AxialCoordinate) -> CubicCoordinate{
+        let x = axial_coordinate.q;
+        let z = axial_coordinate.r;
+        let y = -x-z;
+        CubicCoordinate{x,y,z}
+    }
+
+    pub fn position_to_cubic(position: Position) -> CubicCoordinate{
+        CubicCoordinate::axial_to_cubic(&AxialCoordinate::position_to_axial(position))
+    }
 
     pub fn distance(coord1: &CubicCoordinate, coord2: &CubicCoordinate) -> u128{
         ((coord1.x - coord2.x).abs() +
@@ -120,14 +128,17 @@ impl AxialCoordinate {
     }
 
     pub fn cubic_to_axial(cubic_coordinate: &CubicCoordinate) -> AxialCoordinate{
-        let new_q = cubic_coordinate.z;
-        let new_r = cubic_coordinate.x;
+        let new_q = cubic_coordinate.x;
+        let new_r = cubic_coordinate.z;
         AxialCoordinate{q: new_q, r: new_r}
     }
 
-    // pub fn position_to_axial(position: Position) -> AxialCoordinate{
-    //
-    // }
+    pub fn position_to_axial(position: Position) -> AxialCoordinate{
+        let q = ((1.732050808/3.0 * position.x - 1.0/3.0 * -position.y) / (1.0/1.732050808)) as i128;
+        let r = ((2.0 / 3.0 * -position.y) / (1.0/1.732050808)) as i128;
+
+        AxialCoordinate{q, r}
+    }
 }
 
 
@@ -166,38 +177,32 @@ impl Hexagon{
         NormalizedPosition{x: normalized_x, y: normalized_y}
     }
 
-    pub fn normalized_vertex_array(position: &NormalizedPosition, base_color: [f32; 4],
-        camera: &Camera) -> [graphics::Vertex; 6]
+    pub fn normalized_vertex_positions(position: &NormalizedPosition, camera: &Camera)->[[f32;2];6]
     {
         let scale = camera.scale as f32;
         let distance_x = 0.5 / scale;
         let distance_y = 0.2886751346 / scale;
         [
-        graphics::Vertex{
-            position: [position.x, (position.y + (0.5773502692 / scale))],
-            color: base_color,
-        },
-        graphics::Vertex{
-            position: [(position.x + distance_x), (position.y + distance_y)],
-            color: base_color,
-        },
-        graphics::Vertex{
-            position: [(position.x + distance_x), (position.y - distance_y)],
-            color: base_color,
-        },
-        graphics::Vertex{
-            position: [position.x, (position.y - (0.5773502692 / scale))],
-            color: base_color,
-        },
-        graphics::Vertex{
-            position: [(position.x - distance_x), (position.y - distance_y)],
-            color: base_color,
-        },
-        graphics::Vertex{
-            position: [(position.x - distance_x), (position.y + distance_y)],
-            color: base_color,
-        }
+            [position.x, (position.y + (0.5773502692 / scale))],
+            [(position.x + distance_x), (position.y + distance_y)],
+            [(position.x + distance_x), (position.y - distance_y)],
+            [position.x, (position.y - (0.5773502692 / scale))],
+            [(position.x - distance_x), (position.y - distance_y)],
+            [(position.x - distance_x), (position.y + distance_y)],
         ]
+    }
+
+    pub fn transform_vertex_positions(vertex_positions:[[f32; 2]; 6],camera:&Camera)->[[f32;2]; 6]{
+        let theta = camera.rotation;
+        let rotation_matrix: nalgebra::Matrix2<f32> =
+        nalgebra::Matrix2::new(theta.cos(), -(theta.sin()), theta.sin(), theta.cos());
+        let mut transformed_positions: [[f32; 2]; 6] = [[0.0; 2]; 6];
+        for i in 0..6 {
+            let position_matrix = nalgebra::Matrix2x1::new(vertex_positions[i][0], vertex_positions[i][1]);
+            let transformed_matrix = rotation_matrix * position_matrix;
+            transformed_positions[i] = [transformed_matrix.data[0], transformed_matrix.data[1]];
+        }
+        transformed_positions
     }
 
     pub fn creater_render_vertices(&self, camera: &Camera) -> [graphics::Vertex; 6]{
@@ -207,7 +212,17 @@ impl Hexagon{
         // normalized_position.y > 1.1 || normalized_position.y < -1.1{
         //     return vec![];
         // }
-        Hexagon::normalized_vertex_array(&normalized_position, self.color, camera)
+        let vertex_positions = Hexagon::normalized_vertex_positions(&normalized_position, camera);
+        // let new_vertex_positions = Hexagon::transform_vertex_positions(vertex_positions, camera);
+
+        [
+        graphics::Vertex{position: vertex_positions[0], color: self.color},
+        graphics::Vertex{position: vertex_positions[1], color: self.color},
+        graphics::Vertex{position: vertex_positions[2], color: self.color},
+        graphics::Vertex{position: vertex_positions[3], color: self.color},
+        graphics::Vertex{position: vertex_positions[4], color: self.color},
+        graphics::Vertex{position: vertex_positions[5], color: self.color},
+        ]
     }
 
     // pub fn render_hexagon(&self, camera: &Camera){
@@ -222,13 +237,15 @@ impl Hexagon{
 pub struct Camera {
     pub position: Position,
     pub scale: f64,
+    pub rotation: f32,
 }
 
 impl Camera {
     pub fn new() -> Camera{
         Camera{
             position: Position::new(),
-            scale: 50.0
+            scale: 50.0,
+            rotation: 0.0,
         }
     }
 
@@ -284,16 +301,16 @@ impl EnviromentalTile {
 
         let cartesian_distance_from_center = Position::distance(position, &Position::new());
 
-        if cartesian_distance_from_center < 50.0{
+        if cartesian_distance_from_center < 500.0{
             return  "magma".to_string();
         }
-        else if cartesian_distance_from_center < 80.0{
+        else if cartesian_distance_from_center < 800.0{
             return "stone".to_string();
         }
-        else if cartesian_distance_from_center < 90.0{
+        else if cartesian_distance_from_center < 900.0{
             return "dirt".to_string();
         }
-        else if cartesian_distance_from_center < 95.0{
+        else if cartesian_distance_from_center < 950.0{
             return "air".to_string();
         }
         else{
@@ -302,7 +319,7 @@ impl EnviromentalTile {
     }
 }
 
-pub struct tile_state{
+pub struct TileState{
 
 }
 

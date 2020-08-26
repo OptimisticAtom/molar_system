@@ -29,7 +29,7 @@ fn main() {
     let mut event_pump = sdl.event_pump().unwrap();
     let mut game = game_state::Simulation::new(60);
     game.start_simulation();
-    let mut keydown = false;
+    // let mut keydown = false;
     'main: loop{
         for event in event_pump.poll_iter() {
             match event{
@@ -41,7 +41,7 @@ fn main() {
                 // sdl2::event::Event::AppWillEnterForeground { timestamp } => {},
                 // sdl2::event::Event::AppDidEnterForeground { timestamp } => {},
                 // sdl2::event::Event::Window { timestamp, window_id, win_event } => {},
-                sdl2::event::Event::KeyDown { timestamp: _, window_id: _, keycode: _, scancode: _, keymod: _, repeat: _ } => {keydown = true},
+                // sdl2::event::Event::KeyDown { timestamp: _, window_id: _, keycode: _, scancode: _, keymod: _, repeat: _ } => {keydown = true},
                 // sdl2::event::Event::KeyUp { timestamp, window_id, keycode, scancode, keymod, repeat } => {},
                 // sdl2::event::Event::TextEditing { timestamp, window_id, text, start, length } => {},
                 // sdl2::event::Event::TextInput { timestamp, window_id, text } => {},
@@ -82,7 +82,7 @@ fn main() {
                 _ => {}
             }
         }
-        if keydown {game.handle_keyboard_event(&mut event_pump); keydown = false;}
+        game.handle_keyboard_event(&mut event_pump);
         game.loop_call();
         window.gl_swap_window();
     }
