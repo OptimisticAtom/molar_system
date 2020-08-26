@@ -215,6 +215,12 @@ impl Renderer {
         unsafe {gl::Uniform4f(location, r, g, b, a);}
     }
 
+    pub fn set_camera_position(&mut self, x: f32, y: f32){
+        let c = "camera_position";
+        let location = self.get_uniform_location(c);
+        unsafe {gl::ProgramUniform2f(self.program.gl_handle, location, x, y);}
+    }
+
     pub fn set_rotation(&mut self, theta: f32){
         let rotation_matrix: nalgebra::Matrix2<f32> =
         nalgebra::Matrix2::new(theta.cos(), -(theta.sin()), theta.sin(), theta.cos());

@@ -201,6 +201,8 @@ impl ChunkLoader {
         // }
         self.enviroment_renderer.set_rotation(camera.rotation);
         self.enviroment_renderer.set_scale(camera.scale as f32);
+        self.enviroment_renderer.set_camera_position(
+            camera.position.x as f32, camera.position.y as f32);
         let mut vertices: Vec<graphics::Vertex> = vec![];
         let mut indices: Vec<u32> = vec![];
         // for hash in &self.loaded_tiles {

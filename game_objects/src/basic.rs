@@ -169,26 +169,28 @@ impl Hexagon{
         hexagon
     }
 
-    pub fn world_space_to_screen_space(position: &Position, camera: &Camera) -> NormalizedPosition{
+    pub fn world_space_to_screen_space(position: &Position, camera: &Camera) -> Position{
         let distance_x: f64 = position.x - camera.position.x;
         let distance_y: f64 = position.y  - camera.position.y;
-        let normalized_x: f32 = (distance_x / camera.scale) as f32;
-        let normalized_y: f32 = (distance_y / camera.scale) as f32;
-        NormalizedPosition{x: normalized_x, y: normalized_y}
+        // let normalized_x: f32 = (distance_x / camera.scale) as f32;
+        // let normalized_y: f32 = (distance_y / camera.scale) as f32;
+        Position{x:distance_x, y:distance_y}
     }
 
-    pub fn normalized_vertex_positions(position: &NormalizedPosition, camera: &Camera)->[[f32;2];6]
+    pub fn normalized_vertex_positions(position: &Position)->[[f32;2];6]
     {
-        let scale = camera.scale as f32;
-        let distance_x = 0.5 / scale;
-        let distance_y = 0.2886751346 / scale;
+        // let scale = camera.scale as f32;
+        let x = position.x as f32;
+        let y = position.y as f32;
+        let distance_x = 0.5;
+        let distance_y = 0.2886751346;
         [
-            [position.x, (position.y + (0.5773502692 / scale))],
-            [(position.x + distance_x), (position.y + distance_y)],
-            [(position.x + distance_x), (position.y - distance_y)],
-            [position.x, (position.y - (0.5773502692 / scale))],
-            [(position.x - distance_x), (position.y - distance_y)],
-            [(position.x - distance_x), (position.y + distance_y)],
+            [x, (y + (0.5773502692))],
+            [(x + distance_x), (y + distance_y)],
+            [(x + distance_x), (y - distance_y)],
+            [x, (y - (0.5773502692))],
+            [(x - distance_x), (y - distance_y)],
+            [(x - distance_x), (y + distance_y)],
         ]
     }
 
@@ -206,13 +208,13 @@ impl Hexagon{
     }
 
     pub fn creater_render_vertices(&self, camera: &Camera) -> [graphics::Vertex; 6]{
-        let normalized_position: NormalizedPosition = Hexagon::world_space_to_screen_space(
-            &self.position, camera);
+        // let normalized_position: Position = Hexagon::world_space_to_screen_space(
+        //     &self.position, camera);
         // if normalized_position.x > 1.1 || normalized_position.x < -1.1 ||
         // normalized_position.y > 1.1 || normalized_position.y < -1.1{
         //     return vec![];
         // }
-        let vertex_positions = Hexagon::normalized_vertex_positions(&normalized_position, camera);
+        let vertex_positions = Hexagon::normalized_vertex_positions(&self.position);
         // let new_vertex_positions = Hexagon::transform_vertex_positions(vertex_positions, camera);
 
         [
