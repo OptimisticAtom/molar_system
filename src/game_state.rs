@@ -20,7 +20,7 @@ pub struct Simulation {
     last_camera_state: basic::Camera,
     frame_time: Duration,
     last_frame: Instant,
-    time_since_start: Instant,
+    start_time: Instant,
     frames_per_step: u8,
     frames_elapsed_since_last_step: u8,
     global_step_count: u128,
@@ -45,7 +45,7 @@ impl Simulation {
             last_camera_state: basic::Camera::new(),
             frame_time: Duration::from_micros(frame_as_microseconds),
             last_frame: Instant::now(),
-            time_since_start: Instant::now(),
+            start_time: Instant::now(),
             frames_per_step: fps / 10 as u8,
             frames_elapsed_since_last_step: 0,
             global_step_count: 0,
@@ -54,7 +54,7 @@ impl Simulation {
     }
 
     pub fn start_simulation(&mut self){
-        self.chunck_loader.enviroment_renderer.initialize_object_renderer(include_str!("gen.vert"), include_str!("gen.frag"));
+        self.chunck_loader.enviroment_renderer.initialize_object_renderer(include_str!("gen.vert"), include_str!("gen.geom"), include_str!("gen.frag"));
     }
 
     pub fn loop_call(&mut self){
@@ -62,7 +62,7 @@ impl Simulation {
             self.frame();
             let difference = self.last_frame.elapsed() - self.frame_time;
             self.last_frame = Instant::now() - difference;
-            println!("{:?}", difference);
+            // println!("{:?}", difference);
         }
     }
 
@@ -95,8 +95,60 @@ impl Simulation {
 
     fn draw_new_screen(&mut self){
         unsafe{graphics::gl::Clear(graphics::gl::COLOR_BUFFER_BIT);}
-        self.chunck_loader.draw_tiles(&self.main_camera);
+        self.draw_tiles();
     }
+
+    pub fn draw_tiles(&mut self){
+        // println!("Drawing tiles");
+        self.chunck_loader.enviroment_renderer.set_rotation(self.main_camera.rotation);
+        self.chunck_loader.enviroment_renderer.set_float("scale", self.main_camera.scale as f32);
+        let now = Instant::now();
+        let time_since_start = now.duration_since(self.start_time);
+        self.chunck_loader.enviroment_renderer.set_float("time", time_since_start.as_secs_f32());
+        self.chunck_loader.enviroment_renderer.set_camera_position(
+            self.main_camera.position.x as f32, self.main_camera.position.y as f32);
+
+        let mut vertices: Vec<graphics::Vertex> = vec![];
+        // let mut indices: Vec<u32> = vec![];
+        // for hash in &self.loaded_tiles {
+        //
+        // }
+        let cubic_position = basic::CubicCoordinate::position_to_cubic(self.main_camera.position);
+        let scale = self.main_camera.scale as i128;
+        for x in cubic_position.x - scale..cubic_position.x + scale + 1 {
+            for y in std::cmp::max(cubic_position.y - scale, -x-(cubic_position.z + scale))..
+            std::cmp::min(cubic_position.y + scale, -x-(cubic_position.z - scale)) + 1 {
+                let z = -x-y;
+                let hash = self.chunck_loader.loaded_tiles.get(&[x, y, z]);
+                match hash{
+                    None => {continue;},
+                    _ => {}
+                }
+                let etile = hash.unwrap();
+                let hex_vert = etile.creater_render_vertice(&self.main_camera);
+                vertices.push(hex_vert);
+                // let mut hex_indices = [0u32; 12];
+                // for i in 0..6 {
+                //     let vert = vertices.len() as u32;
+                //     vertices.push(hex_verts[i]);
+                //     match i{
+                //         0 => {hex_indices[0] = vert; hex_indices[3] = vert;},
+                //         1 => {hex_indices[4] = vert; hex_indices[6] = vert; hex_indices[9] = vert;},
+                //         2 => {hex_indices[10] = vert},
+                //         3 => {hex_indices[7] = vert; hex_indices[11] = vert;},
+                //         4 => {hex_indices[1] = vert; hex_indices[5] = vert; hex_indices[8] = vert;},
+                //         5 => {hex_indices[2] = vert},
+                //         _ => {println!("game_state::draw_tiles - vertices are out of bounds{:?}", i);}
+                //     }
+                // }
+                // for i in 0..12 {
+                //     indices.push(hex_indices[i]);
+                // }
+            }
+        }
+        self.chunck_loader.enviroment_renderer.draw_object(vertices);
+    }
+
 
     pub fn handle_keyboard_event(&mut self, e: &mut sdl2::EventPump){
         if e.keyboard_state().is_scancode_pressed(Scancode::W) {self.main_camera.position.y += 1.0;}
@@ -160,22 +212,27 @@ impl ChunkLoader {
                 // if x.abs() == CHUNK_SIZE || y.abs() == CHUNK_SIZE || z.abs() == CHUNK_SIZE{
                 //
                 // }
-                let mut tile = basic::EnviromentalTile::spawn(
-                    basic::CubicCoordinate{
+                // let mut tile = basic::EnviromentalTile::spawn(
+                //     basic::CubicCoordinate{
+                //         x: (x + chunk_coordinate.x),
+                //         y: (y + chunk_coordinate.y),
+                //         z: (z + chunk_coordinate.z)
+                //     },
+                //     dictionary, camera);
+                // // let r = (x as f32/50.0).abs();
+                // // let g = (y as f32/50.0).abs();
+                // // let b = (z as f32/50.0).abs();
+                // tile.tile.hexagon.set_color(
+                //     tile.tile.molecule.color[0],
+                //     tile.tile.molecule.color[1],
+                //     tile.tile.molecule.color[2],
+                //     tile.tile.molecule.color[3]
+                // );
+                let tile = ChunkLoader::generate_enviromental_tile(basic::CubicCoordinate{
                         x: (x + chunk_coordinate.x),
                         y: (y + chunk_coordinate.y),
                         z: (z + chunk_coordinate.z)
-                    },
-                    dictionary, camera);
-                // let r = (x as f32/50.0).abs();
-                // let g = (y as f32/50.0).abs();
-                // let b = (z as f32/50.0).abs();
-                tile.tile.hexagon.set_color(
-                    tile.tile.molecule.color[0],
-                    tile.tile.molecule.color[1],
-                    tile.tile.molecule.color[2],
-                    tile.tile.molecule.color[3]
-                );
+                    }, dictionary);
                 // tiles.push(tile);
                 let key = [x + chunk_coordinate.x, y + chunk_coordinate.y, z + chunk_coordinate.z];
                 self.loaded_tiles.insert(key, tile);
@@ -184,65 +241,59 @@ impl ChunkLoader {
         }
     }
 
-    pub fn draw_tiles(&mut self, camera: &basic::Camera){
-        // let range = camera.scale as i128;
-        // let range_x = (self.camera.position.x + range);
-        // let range_z = (self.player.cubic_position.z + range);
-        // for x in -range_x..range_x {
-        //     for z in std::cmp::max(-range_z, -x-range_z)..std::cmp::min(range_z, -x+range_z) {
-        //         let y = -x-z;
-        //         let option = self.loaded_tiles.get(&[x,y,z]);
-        //         if option.is_some(){
-        //             let tile = option.unwrap();
-        //             tile.tile.hexagon.render_hexagon(camera);
-        //         }
-        //         // tile.tile.hexagon.render_hexagon(camera);
-        //     }
-        // }
-        self.enviroment_renderer.set_rotation(camera.rotation);
-        self.enviroment_renderer.set_scale(camera.scale as f32);
-        self.enviroment_renderer.set_camera_position(
-            camera.position.x as f32, camera.position.y as f32);
-        let mut vertices: Vec<graphics::Vertex> = vec![];
-        let mut indices: Vec<u32> = vec![];
-        // for hash in &self.loaded_tiles {
-        //
-        // }
-        let cubic_position = basic::CubicCoordinate::position_to_cubic(camera.position);
-        let scale = camera.scale as i128;
-        for x in cubic_position.x - 50..cubic_position.x + 51 {
-            for y in std::cmp::max(cubic_position.y - 50, -x-(cubic_position.z + 50))..
-            std::cmp::min(cubic_position.y + 50, -x-(cubic_position.z - 50)) + 1 {
-                let z = -x-y;
-                let hash = self.loaded_tiles.get(&[x, y, z]);
-                match hash{
-                    None => {continue;},
-                    _ => {}
-                }
-                let etile = hash.unwrap();
-                let hex_verts = etile.tile.hexagon.creater_render_vertices(camera);
-                let mut hex_indices = [0u32; 12];
-                for i in 0..6 {
-                    let vert = vertices.len() as u32;
-                    vertices.push(hex_verts[i]);
-                    match i{
-                        0 => {hex_indices[0] = vert; hex_indices[3] = vert;},
-                        1 => {hex_indices[4] = vert; hex_indices[6] = vert; hex_indices[9] = vert;},
-                        2 => {hex_indices[10] = vert},
-                        3 => {hex_indices[7] = vert; hex_indices[11] = vert;},
-                        4 => {hex_indices[1] = vert; hex_indices[5] = vert; hex_indices[8] = vert;},
-                        5 => {hex_indices[2] = vert},
-                        _ => {println!("game_state::draw_tiles - vertices are out of bounds{:?}", i);}
-                    }
-                }
-                for i in 0..12 {
-                    indices.push(hex_indices[i]);
-                }
-            }
+    pub fn generate_enviromental_tile(cubic_coordinate: basic::CubicCoordinate,
+    dictionary: &chemistry::MaterialDictionary) -> basic::EnviromentalTile{
+        let cubic_distance_from_center =
+        basic::CubicCoordinate::distance(&cubic_coordinate, &basic::CubicCoordinate::new());
+
+        let position = basic::Position::cubic_to_position(&cubic_coordinate);
+
+        let cartesian_distance_from_center =
+        basic::Position::distance(&position, &basic::Position::new());
+        let mut formula = "".to_string();
+        let mut kelvin = 0.0;
+        let mut mols = 1.0;
+        let mut color: [f32; 4] = [0.1,0.1,0.7,1.0];
+        if cartesian_distance_from_center < 500.0{
+            formula = "silica".to_string();
+            kelvin = 2500.0;
+            mols = 192.181;
+            color = [0.9,0.6,0.1,1.0];
         }
-        self.enviroment_renderer.draw_object(vertices, indices);
+        else if cartesian_distance_from_center < 800.0{
+            formula = "silica".to_string();
+            kelvin = 300.0;
+            mols = 80.256;
+            color = [0.6,0.5,0.5,1.0];
+        }
+        else if cartesian_distance_from_center < 900.0{
+            formula = "silica".to_string();
+            kelvin = 250.0;
+            mols = 24.60;
+            color = [0.7,0.6,0.4,1.0];
+        }
+        else if cartesian_distance_from_center < 950.0{
+            formula = "air".to_string();
+            kelvin = 250.0;
+            mols = 42.87;
+            color = [0.7,0.8,0.9,0.8];
+        }
+        else{
+            formula = "air".to_string();
+            kelvin = 100.0;
+            mols = 5.07;
+            color = [0.0,0.0,0.0,0.0];
+        }
+        let mut tile = basic::EnviromentalTile{
+         tile: basic::Tile::new(formula, &position),
+         cubic_position: cubic_coordinate,
+         material_state: chemistry::MaterialState{kelvin, mols},
+        };
+        tile.tile.hexagon.color = color;
+        tile
     }
 }
+
 
 struct Player{
     pub cubic_position: basic::CubicCoordinate,

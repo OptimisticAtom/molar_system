@@ -162,7 +162,7 @@ impl Hexagon{
         }
     }
 
-    pub fn initialize_hexagon(set_position: &Position, camera: &Camera) -> Hexagon{
+    pub fn initialize_hexagon(set_position: &Position) -> Hexagon{
         let mut hexagon = Hexagon::new();
         hexagon.position = *set_position;
         // hexagon.renderer.initialize_object_renderer(hexagon.creater_render_vertices(camera));
@@ -216,15 +216,23 @@ impl Hexagon{
         // }
         let vertex_positions = Hexagon::normalized_vertex_positions(&self.position);
         // let new_vertex_positions = Hexagon::transform_vertex_positions(vertex_positions, camera);
-
-        [
-        graphics::Vertex{position: vertex_positions[0], color: self.color},
-        graphics::Vertex{position: vertex_positions[1], color: self.color},
-        graphics::Vertex{position: vertex_positions[2], color: self.color},
-        graphics::Vertex{position: vertex_positions[3], color: self.color},
-        graphics::Vertex{position: vertex_positions[4], color: self.color},
-        graphics::Vertex{position: vertex_positions[5], color: self.color},
-        ]
+        let mut vertices = [graphics::Vertex{
+            position: vertex_positions[0],
+            color: self.color,
+            kelvin: 0.0,
+        }; 6];
+        for i in 0..6 {
+            vertices[i].position = vertex_positions[i];
+        }
+        vertices
+        // [
+        // graphics::Vertex{position: vertex_positions[0], color: self.color},
+        // graphics::Vertex{position: vertex_positions[1], color: self.color},
+        // graphics::Vertex{position: vertex_positions[2], color: self.color},
+        // graphics::Vertex{position: vertex_positions[3], color: self.color},
+        // graphics::Vertex{position: vertex_positions[4], color: self.color},
+        // graphics::Vertex{position: vertex_positions[5], color: self.color},
+        // ]
     }
 
     // pub fn render_hexagon(&self, camera: &Camera){
@@ -260,64 +268,36 @@ impl Camera {
 pub struct Tile {
     pub hexagon: Hexagon,
     formula: String,
-    pub molecule: chemistry::Molecule,
 }
 
 impl Tile {
-    pub fn new(assigned_formula: String, camera: &Camera,
-        position: &Position, dictionary: &chemistry::MaterialDictionary) -> Tile{
-        let new_hexagon = Hexagon::initialize_hexagon(position, camera);
+    pub fn new(assigned_formula: String, position: &Position) -> Tile{
+        let new_hexagon = Hexagon::initialize_hexagon(position);
         //---------------
-        let new_molecule = dictionary.access_dictionary(&assigned_formula);
+        // let new_molecule = dictionary.access_dictionary(&assigned_formula);
         Tile{
             hexagon: new_hexagon,
             formula: assigned_formula,
-            molecule: new_molecule,
         }
     }
 }
 
 pub struct EnviromentalTile {
     pub tile: Tile,
-    cubic_position: CubicCoordinate,
+    pub cubic_position: CubicCoordinate,
+    pub material_state: chemistry::MaterialState,
 }
 
 impl EnviromentalTile {
-    pub fn spawn(cubic_coordinate: CubicCoordinate, dictionary: &chemistry::MaterialDictionary,
-        camera: &Camera) -> EnviromentalTile
-    {
-        let position = Position::cubic_to_position(&cubic_coordinate);
-        let formula = EnviromentalTile::decide_formula(&cubic_coordinate, &position);
-
-
-        let new_tile = Tile::new(formula, camera, &position, dictionary);
-        EnviromentalTile{
-            tile: new_tile,
-            cubic_position: cubic_coordinate,
-        }
-    }
-
-    pub fn decide_formula(cubic_coordinate: &CubicCoordinate, position: &Position) -> String{
-        let cubic_distance_from_center =
-        CubicCoordinate::distance(cubic_coordinate, &CubicCoordinate::new());
-
-        let cartesian_distance_from_center = Position::distance(position, &Position::new());
-
-        if cartesian_distance_from_center < 500.0{
-            return  "magma".to_string();
-        }
-        else if cartesian_distance_from_center < 800.0{
-            return "stone".to_string();
-        }
-        else if cartesian_distance_from_center < 900.0{
-            return "dirt".to_string();
-        }
-        else if cartesian_distance_from_center < 950.0{
-            return "air".to_string();
-        }
-        else{
-            return "vacum".to_string();
-        }
+    pub fn creater_render_vertice(&self, camera: &Camera) -> graphics::Vertex{
+        let x = self.tile.hexagon.position.x as f32;
+        let y = self.tile.hexagon.position.y as f32;
+        let vertice = graphics::Vertex{
+            position: [x,y],
+            color: self.tile.hexagon.color,
+            kelvin: self.material_state.kelvin as f32,
+        };
+        vertice
     }
 }
 

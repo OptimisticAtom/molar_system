@@ -1,11 +1,14 @@
 #version 440 core
 
-in vec2 v_Position;
-in vec4 v_Color;
+in vec2 g_Position;
+in vec4 g_Color;
+in vec2 vertex_position;
+in vec2 w_Position;
 /* out vec4 Color; */
 precision mediump float;
 
 uniform float scale;
+uniform float time;
 
 float random(float p) {
   return fract(sin(p)*10000.);
@@ -28,10 +31,29 @@ float smoothNoise(vec2 p) {
   return noise(nw(p));
 }
 
+float movingNoise(vec2 p) {
+  float total = 0.0;
+  total += smoothNoise(p - time);
+  total += smoothNoise(p*2. + time) / 2.;
+  total += smoothNoise(p*4. - time) / 4.;
+  total += smoothNoise(p*8. + time) / 8.;
+  total += smoothNoise(p*16.- time) / 16.;
+  total /= 1. + 1./2. + 1./4. + 1./8. + 1./16.;
+  return total;
+}
+
+float nestedNoise(vec2 p) {
+  float x = movingNoise(p);
+  float y = movingNoise(p + 100.);
+  return movingNoise(p + vec2(x, y));
+}
+
 void main() {
-  vec2 p = (1 - v_Position) / scale;
-  float brightness = smoothNoise(p);
-  vec3 c = (v_Color.rgb + brightness / 4.0) / 1.25;
+  vec2 p = w_Position / 100.0;
+  vec2 d = (vertex_position - w_Position) * 2.0;
+  float brightness = nestedNoise(p) * 0.2;
+  float brightness2 = nestedNoise(d);
+  vec3 c = (g_Color.rgb + brightness*brightness2) / 2.0;
   gl_FragColor.rgb = c;
   gl_FragColor.a = 1.;
 }
