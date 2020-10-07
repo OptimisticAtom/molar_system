@@ -2,6 +2,7 @@ extern crate gl_api;
 use gl_api::graphics;
 extern crate science;
 use science::chemistry;
+use science::physics;
 use std::f32::consts::PI;
 
 pub const CHUNK_SIZE: i128 = 50;
@@ -207,33 +208,33 @@ impl Hexagon{
         transformed_positions
     }
 
-    pub fn creater_render_vertices(&self, camera: &Camera) -> [graphics::Vertex; 6]{
-        // let normalized_position: Position = Hexagon::world_space_to_screen_space(
-        //     &self.position, camera);
-        // if normalized_position.x > 1.1 || normalized_position.x < -1.1 ||
-        // normalized_position.y > 1.1 || normalized_position.y < -1.1{
-        //     return vec![];
-        // }
-        let vertex_positions = Hexagon::normalized_vertex_positions(&self.position);
-        // let new_vertex_positions = Hexagon::transform_vertex_positions(vertex_positions, camera);
-        let mut vertices = [graphics::Vertex{
-            position: vertex_positions[0],
-            color: self.color,
-            kelvin: 0.0,
-        }; 6];
-        for i in 0..6 {
-            vertices[i].position = vertex_positions[i];
-        }
-        vertices
-        // [
-        // graphics::Vertex{position: vertex_positions[0], color: self.color},
-        // graphics::Vertex{position: vertex_positions[1], color: self.color},
-        // graphics::Vertex{position: vertex_positions[2], color: self.color},
-        // graphics::Vertex{position: vertex_positions[3], color: self.color},
-        // graphics::Vertex{position: vertex_positions[4], color: self.color},
-        // graphics::Vertex{position: vertex_positions[5], color: self.color},
-        // ]
-    }
+    // pub fn creater_render_vertices(&self, camera: &Camera) -> [graphics::Vertex; 6]{
+    //     // let normalized_position: Position = Hexagon::world_space_to_screen_space(
+    //     //     &self.position, camera);
+    //     // if normalized_position.x > 1.1 || normalized_position.x < -1.1 ||
+    //     // normalized_position.y > 1.1 || normalized_position.y < -1.1{
+    //     //     return vec![];
+    //     // }
+    //     let vertex_positions = Hexagon::normalized_vertex_positions(&self.position);
+    //     // let new_vertex_positions = Hexagon::transform_vertex_positions(vertex_positions, camera);
+    //     let mut vertices = [graphics::Vertex{
+    //         position: vertex_positions[0],
+    //         color: self.color,
+    //         kelvin: 0.0,
+    //     }; 6];
+    //     for i in 0..6 {
+    //         vertices[i].position = vertex_positions[i];
+    //     }
+    //     vertices
+    //     // [
+    //     // graphics::Vertex{position: vertex_positions[0], color: self.color},
+    //     // graphics::Vertex{position: vertex_positions[1], color: self.color},
+    //     // graphics::Vertex{position: vertex_positions[2], color: self.color},
+    //     // graphics::Vertex{position: vertex_positions[3], color: self.color},
+    //     // graphics::Vertex{position: vertex_positions[4], color: self.color},
+    //     // graphics::Vertex{position: vertex_positions[5], color: self.color},
+    //     // ]
+    // }
 
     // pub fn render_hexagon(&self, camera: &Camera){
     //     self.renderer.draw_object(self.creater_render_vertices(camera));
@@ -286,16 +287,30 @@ pub struct EnviromentalTile {
     pub tile: Tile,
     pub cubic_position: CubicCoordinate,
     pub material_state: chemistry::MaterialState,
+    pub physical_properties: physics::PhysicalProperties,
 }
 
 impl EnviromentalTile {
     pub fn creater_render_vertice(&self, camera: &Camera) -> graphics::Vertex{
         let x = self.tile.hexagon.position.x as f32;
         let y = self.tile.hexagon.position.y as f32;
+        // println!("{:?}", self.material_state.state_of_matter);
         let vertice = graphics::Vertex{
             position: [x,y],
             color: self.tile.hexagon.color,
             kelvin: self.material_state.kelvin as f32,
+            g_c_sizes: [
+            self.physical_properties.min_grain_size,
+            self.physical_properties.max_grain_size,
+            self.physical_properties.min_crystal_size,
+            self.physical_properties.max_crystal_size,
+            ],
+            settings: [
+            self.material_state.state_of_matter as f32,
+            self.physical_properties.grain_size_function as f32,
+            self.physical_properties.crystal_size_function as f32,
+            self.physical_properties.crystal_shape as f32,
+            ],
         };
         vertice
     }

@@ -1,9 +1,11 @@
-#version 440 core
+#version 450 core
 
 in vec2 g_Position;
 in vec4 g_Color;
 in vec2 vertex_position;
 in vec2 w_Position;
+in float g_max_grain;
+flat in float g_state_of_matter;
 /* out vec4 Color; */
 precision mediump float;
 
@@ -48,12 +50,75 @@ float nestedNoise(vec2 p) {
   return movingNoise(p + vec2(x, y));
 }
 
-void main() {
-  vec2 p = w_Position / 100.0;
+float Feather(vec2 p){
+  float d = length(p);
+  return d;
+}
+
+vec4 Solid(){
+  vec2 p = w_Position;
   vec2 d = (vertex_position - w_Position) * 2.0;
-  float brightness = nestedNoise(p) * 0.2;
-  float brightness2 = nestedNoise(d);
-  vec3 c = (g_Color.rgb + brightness*brightness2) / 2.0;
-  gl_FragColor.rgb = c;
-  gl_FragColor.a = 1.;
+  float brightness = nestedNoise(p);
+  float id_scale = 10.;
+  if(g_max_grain > 0)
+  {
+    id_scale = .5 / g_max_grain;
+  }
+  vec2 id = floor(d*id_scale);
+  vec2 gid = floor(p*id_scale);
+  float center_id = clamp(Feather(id), 0.0, id_scale);
+  float brightness2 = noise(vec2(1.)*sin(gid));
+  vec3 c = (mix(g_Color.rgb, vec3(fract(brightness2)), .1));
+  return vec4(c, 1.);
+}
+
+vec4 Liquid(){
+  vec2 p = w_Position;
+  vec2 d = (vertex_position - w_Position) * 2.0;
+  float brightness = nestedNoise(mod(p, 30));
+  vec3 c = mix(g_Color.rgb, vec3(fract(brightness)), 0.3);
+  return vec4(c, g_Color.a);
+}
+
+vec4 Gas(){
+  vec2 p = w_Position;
+  vec2 d = (vertex_position - w_Position) * 2.0;
+  float brightness = nestedNoise(mod(p, 30));
+  vec3 c = mix(g_Color.rgb, vec3(fract(brightness)), 0.06);
+  return vec4(c, g_Color.a);
+}
+
+void main() {
+  // vec4 c = vec4(1.);
+  vec4 c = g_Color;
+  int som = int(round(g_state_of_matter));
+  switch(som)
+  {
+    case 0:
+      c = Solid();
+      break;
+
+    case 254:
+      c = Liquid();
+      break;
+
+    case 255:
+      c = Gas();
+      break;
+
+    default:
+      break;
+  }
+  // if(som == 0.)
+  // {
+  //   c = Solid();
+  // }
+  // else if(som == 254.)
+  // {
+  //   c = Liquid();
+  // }
+  // else{
+  //
+  // }
+  gl_FragColor = c;
 }

@@ -10,6 +10,7 @@ extern crate game_objects;
 use game_objects::basic;
 extern crate science;
 use science::chemistry;
+use science::physics;
 
 
 pub struct Simulation {
@@ -109,10 +110,6 @@ impl Simulation {
             self.main_camera.position.x as f32, self.main_camera.position.y as f32);
 
         let mut vertices: Vec<graphics::Vertex> = vec![];
-        // let mut indices: Vec<u32> = vec![];
-        // for hash in &self.loaded_tiles {
-        //
-        // }
         let cubic_position = basic::CubicCoordinate::position_to_cubic(self.main_camera.position);
         let scale = self.main_camera.scale as i128;
         for x in cubic_position.x - scale..cubic_position.x + scale + 1 {
@@ -127,23 +124,6 @@ impl Simulation {
                 let etile = hash.unwrap();
                 let hex_vert = etile.creater_render_vertice(&self.main_camera);
                 vertices.push(hex_vert);
-                // let mut hex_indices = [0u32; 12];
-                // for i in 0..6 {
-                //     let vert = vertices.len() as u32;
-                //     vertices.push(hex_verts[i]);
-                //     match i{
-                //         0 => {hex_indices[0] = vert; hex_indices[3] = vert;},
-                //         1 => {hex_indices[4] = vert; hex_indices[6] = vert; hex_indices[9] = vert;},
-                //         2 => {hex_indices[10] = vert},
-                //         3 => {hex_indices[7] = vert; hex_indices[11] = vert;},
-                //         4 => {hex_indices[1] = vert; hex_indices[5] = vert; hex_indices[8] = vert;},
-                //         5 => {hex_indices[2] = vert},
-                //         _ => {println!("game_state::draw_tiles - vertices are out of bounds{:?}", i);}
-                //     }
-                // }
-                // for i in 0..12 {
-                //     indices.push(hex_indices[i]);
-                // }
             }
         }
         self.chunck_loader.enviroment_renderer.draw_object(vertices);
@@ -181,23 +161,36 @@ impl ChunkLoader {
     {
         // let render_distance: i128 = 2;
         let cubic_position = basic::CubicCoordinate::position_to_cubic(camera.position);
-        let chunk_x: i128 = cubic_position.x - (cubic_position.x % 100);
-        let chunk_y: i128 = cubic_position.y - (cubic_position.y % 100);
-        let chunk_z: i128 = cubic_position.z - (cubic_position.z % 100);
-        for neighboring_chunk in 0..7 {
-            let neighbor = basic::CubicCoordinate::
-            get_neighbor_chunk(basic::CubicCoordinate{x: chunk_x, y: chunk_y, z: chunk_z},
-                neighboring_chunk);
+        let x: i128 = cubic_position.x - (cubic_position.x % 50);
+        let y: i128 = cubic_position.y - (cubic_position.y % 50);
+        let z: i128 = cubic_position.z - (cubic_position.z % 50);
+        // for x in cubic_position.x - 50.. cubic_position.x + 51 {
+        //     for y in std::cmp::max(cubic_position.y - 50, -x - (cubic_position.z + 50))..
+        //     std::cmp::min(cubic_position.y + 50, -x - (cubic_position.z - 50)) + 1 {
+        //         let z = -x-y;
+        //         if x % 50 == 0 && y % 50 == 0 && z % 50 == 0 &&
+        //         (x % 100 == 0 || y % 100 == 0 || z % 100 == 0){
+        //
+        //         }
+        //     }
+        // }
+        if (x % 100 == 0 || y % 100 == 0 || z % 100 == 0) && x+y+z == 0{
+            for neighboring_chunk in 0..7 {
+                let neighbor = basic::CubicCoordinate::
+                get_neighbor_chunk(basic::CubicCoordinate{x,y,z},
+                    neighboring_chunk);
 
-            let chunk_position = basic::CubicCoordinate{
-                x: (neighbor.x), y: (neighbor.y), z: (neighbor.z)};
+                let chunk_position = basic::CubicCoordinate{
+                    x: (neighbor.x), y: (neighbor.y), z: (neighbor.z)};
 
-            let key = [chunk_position.x, chunk_position.y, chunk_position.z];
-            if !self.loaded_chunks.contains_key(&key){
-                self.loaded_chunks.insert(key, basic::Chunk{cubic_position: chunk_position});
-                self.load_chunk_of_tiles(camera, dictionary, chunk_position);
-                // self.load_chunk(chunk_position, dictionary, camera);
-                println!("loaded chunk: x{:?}, y{:?}, z{:?}", chunk_position.x, chunk_position.y, chunk_position.z);
+                let key = [chunk_position.x, chunk_position.y, chunk_position.z];
+                if !self.loaded_chunks.contains_key(&key){
+                    self.loaded_chunks.insert(key, basic::Chunk{cubic_position: chunk_position});
+                    self.load_chunk_of_tiles(camera, dictionary, chunk_position);
+                    // self.load_chunk(chunk_position, dictionary, camera);
+                    println!("loaded chunk: x{:?}, y{:?}, z{:?}", chunk_position.x, chunk_position.y, chunk_position.z);
+                    println!("--------------------------------------------------");
+                }
             }
         }
     }
@@ -254,40 +247,48 @@ impl ChunkLoader {
         let mut kelvin = 0.0;
         let mut mols = 1.0;
         let mut color: [f32; 4] = [0.1,0.1,0.7,1.0];
+        let mut state_of_matter: u8 = 0;
+        let mut pp = physics::PhysicalProperties::new();
         if cartesian_distance_from_center < 500.0{
             formula = "silica".to_string();
             kelvin = 2500.0;
             mols = 192.181;
             color = [0.9,0.6,0.1,1.0];
+            state_of_matter = 254;
         }
         else if cartesian_distance_from_center < 800.0{
             formula = "silica".to_string();
             kelvin = 300.0;
             mols = 80.256;
             color = [0.6,0.5,0.5,1.0];
+            state_of_matter = 0;
         }
         else if cartesian_distance_from_center < 900.0{
             formula = "silica".to_string();
             kelvin = 250.0;
             mols = 24.60;
             color = [0.7,0.6,0.4,1.0];
+            pp.max_grain_size = 0.1;
         }
         else if cartesian_distance_from_center < 950.0{
             formula = "air".to_string();
             kelvin = 250.0;
             mols = 42.87;
             color = [0.7,0.8,0.9,0.8];
+            state_of_matter = 255;
         }
         else{
             formula = "air".to_string();
             kelvin = 100.0;
             mols = 5.07;
             color = [0.0,0.0,0.0,0.0];
+            state_of_matter = 255;
         }
         let mut tile = basic::EnviromentalTile{
          tile: basic::Tile::new(formula, &position),
          cubic_position: cubic_coordinate,
-         material_state: chemistry::MaterialState{kelvin, mols},
+         material_state: chemistry::MaterialState{kelvin, mols, state_of_matter},
+         physical_properties: pp,
         };
         tile.tile.hexagon.color = color;
         tile

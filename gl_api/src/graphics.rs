@@ -153,6 +153,8 @@ pub struct Vertex{
     pub position: [f32; 2],
     pub color: [f32; 4],
     pub kelvin: f32,
+    pub g_c_sizes: [f32; 4],
+    pub settings: [f32; 4],
 }
 
 // impl Default for Vertex{
@@ -289,7 +291,7 @@ impl Renderer {
             // gl::BindBuffer(gl::ELEMENT_ARRAY_BUFFER, 0);
             // println!("unbind ibo");
             gl::BindVertexArray(0);
-            println!("vao unbind");
+            // println!("vao unbind");
         }
     }
 
@@ -348,7 +350,7 @@ impl Renderer {
                     (std::mem::size_of::<Vertex>()) as gl::types::GLint, // stride (byte offset between consecutive attributes)
                     (2 * std::mem::size_of::<f32>()) as *const gl::types::GLvoid // offset of the first component
                 );
-                gl::EnableVertexAttribArray(2); // this is "layout (location = 1)" in vertex shader
+                gl::EnableVertexAttribArray(2); // this is "layout (location = 2)" in vertex shader
                 gl::VertexAttribPointer(
                     2, // index of the generic vertex attribute ("layout (location = 2)")
                     1, // the number of components per generic vertex attribute
@@ -356,6 +358,24 @@ impl Renderer {
                     gl::FALSE, // normalized (int-to-float conversion)
                     (std::mem::size_of::<Vertex>()) as gl::types::GLint, // stride (byte offset between consecutive attributes)
                     (6 * std::mem::size_of::<f32>()) as *const gl::types::GLvoid // offset of the first component
+                );
+                gl::EnableVertexAttribArray(3); // this is "layout (location = 3)" in vertex shader
+                gl::VertexAttribPointer(
+                    3, // index of the generic vertex attribute ("layout (location = 3)")
+                    4, // the number of components per generic vertex attribute
+                    gl::FLOAT, // data type
+                    gl::FALSE, // normalized (int-to-float conversion)
+                    (std::mem::size_of::<Vertex>()) as gl::types::GLint, // stride (byte offset between consecutive attributes)
+                    (7 * std::mem::size_of::<f32>()) as *const gl::types::GLvoid // offset of the first component
+                );
+                gl::EnableVertexAttribArray(4); // this is "layout (location = 4)" in vertex shader
+                gl::VertexAttribPointer(
+                    4, // index of the generic vertex attribute ("layout (location = 4)")
+                    4, // the number of components per generic vertex attribute
+                    gl::FLOAT, // data type
+                    gl::FALSE, // normalized (int-to-float conversion)
+                    (std::mem::size_of::<Vertex>()) as gl::types::GLint, // stride (byte offset between consecutive attributes)
+                    (11 * std::mem::size_of::<f32>()) as *const gl::types::GLvoid // offset of the first component
                 );
                 gl::BindVertexArray(0);
             }

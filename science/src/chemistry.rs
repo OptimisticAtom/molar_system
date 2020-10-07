@@ -24,6 +24,7 @@ pub struct Material{
 pub struct MaterialState{
     pub kelvin: f64,
     pub mols: f64,
+    pub state_of_matter: u8,
 }
 
 pub struct MaterialDictionary{
